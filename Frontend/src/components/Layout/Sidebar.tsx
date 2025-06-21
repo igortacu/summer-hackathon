@@ -23,7 +23,6 @@ export default function Sidebar({ activeTab, onTabChange, userRole }: SidebarPro
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'chat', label: 'Team Chat', icon: MessageCircle },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
   ];
 
   const mentorTabs = [
@@ -32,7 +31,6 @@ export default function Sidebar({ activeTab, onTabChange, userRole }: SidebarPro
     { id: 'review', label: 'Code Review', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'chats', label: 'Group Chats', icon: MessageCircle },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
   ];
 
   const tabs = userRole === 'student' ? studentTabs : mentorTabs;

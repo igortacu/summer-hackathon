@@ -1,69 +1,38 @@
+// src/components/Student/MyTasks.tsx
 import React, { useState } from 'react';
-import { CheckSquare, Clock, AlertTriangle, User, Tag, Filter } from 'lucide-react';
+import {
+  CheckSquare,
+  Clock,
+  AlertTriangle,
+  Tag,
+  Filter
+} from 'lucide-react';
 
-export default function MyTasks() {
-  const [filterStatus, setFilterStatus] = useState('all');
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  assignedTo: string;
+  status: 'todo' | 'in-progress' | 'done';
+  priority: 'low' | 'medium' | 'high';
+  dueDate: Date;
+  statusColor: 'green' | 'yellow' | 'red';
+  points: number;
+  tags: string[];
+}
 
-  // Mock tasks data - only tasks assigned to current user
-  const myTasks = [
-    {
-      id: '1',
-      title: 'Implement user authentication',
-      description: 'Create login and registration forms with validation',
-      status: 'done' as const,
-      priority: 'high' as const,
-      dueDate: new Date(Date.now() - 86400000),
-      statusColor: 'green' as const,
-      points: 35,
-      tags: ['frontend', 'auth']
-    },
-    {
-      id: '2',
-      title: 'Design responsive navigation',
-      description: 'Create mobile-friendly navigation component',
-      status: 'in-progress' as const,
-      priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 43200000),
-      statusColor: 'yellow' as const,
-      points: 25,
-      tags: ['frontend', 'ui']
-    },
-    {
-      id: '3',
-      title: 'Setup development environment',
-      description: 'Configure development tools and CI/CD pipeline',
-      status: 'todo' as const,
-      priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 259200000),
-      statusColor: 'green' as const,
-      points: 20,
-      tags: ['setup', 'devops']
-    },
-    {
-      id: '4',
-      title: 'Create user profile page',
-      description: 'Design and implement user profile management',
-      status: 'todo' as const,
-      priority: 'low' as const,
-      dueDate: new Date(Date.now() + 432000000),
-      statusColor: 'green' as const,
-      points: 30,
-      tags: ['frontend', 'profile']
-    },
-    {
-      id: '5',
-      title: 'Fix responsive issues',
-      description: 'Address mobile layout problems on dashboard',
-      status: 'todo' as const,
-      priority: 'high' as const,
-      dueDate: new Date(Date.now() - 43200000),
-      statusColor: 'red' as const,
-      points: 15,
-      tags: ['frontend', 'bug']
-    }
-  ];
+interface MyTasksProps {
+  tasks: Task[];
+  userRole: string;
+}
 
-  const getTasksByStatus = (status: string) => {
+export default function MyTasks({ tasks, userRole }: MyTasksProps) {
+  const [filterStatus, setFilterStatus] = useState<'all'|'todo'|'in-progress'|'done'>('all');
+
+  // only get tasks assigned to me
+  const myTasks = tasks.filter(t => t.assignedTo === userRole);
+
+  const getTasksByStatus = (status: 'all'|'todo'|'in-progress'|'done') => {
     if (status === 'all') return myTasks;
     return myTasks.filter(task => task.status === status);
   };
@@ -81,35 +50,30 @@ export default function MyTasks() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
+  const getPriorityClasses = (p: 'low'|'medium'|'high') => {
+    switch (p) {
       case 'high':
         return 'bg-error-100 text-error-800 border-error-200';
       case 'medium':
         return 'bg-warning-100 text-warning-800 border-warning-200';
       case 'low':
         return 'bg-success-100 text-success-800 border-success-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const formatDate = (date: Date) => {
     const now = new Date();
-    const diffTime = date.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Tomorrow';
-    if (diffDays === -1) return 'Yesterday';
-    if (diffDays > 0) return `In ${diffDays} days`;
-    return `${Math.abs(diffDays)} days ago`;
+    const delta = Math.ceil((date.getTime() - now.getTime()) / (1000*3600*24));
+    if (delta === 0) return 'Today';
+    if (delta === 1) return 'Tomorrow';
+    if (delta < 0) return `${Math.abs(delta)} days ago`;
+    return `In ${delta} days`;
   };
 
   const columns = [
-    { id: 'todo', title: 'To Do', color: 'border-gray-300' },
-    { id: 'in-progress', title: 'Doing', color: 'border-primary-300' },
-    { id: 'done', title: 'Done', color: 'border-success-300' }
+    { id: 'todo' as const,     title: 'To Do',      color: 'border-gray-300' },
+    { id: 'in-progress' as const, title: 'Doing',   color: 'border-primary-300' },
+    { id: 'done' as const,     title: 'Done',      color: 'border-success-300' }
   ];
 
   return (
@@ -120,40 +84,37 @@ export default function MyTasks() {
       </div>
 
       {/* Filter */}
-      <div className="mb-6">
-        <div className="flex items-center space-x-4">
-          <Filter className="h-5 w-5 text-gray-400" />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          >
-            <option value="all">All Tasks</option>
-            <option value="todo">To Do</option>
-            <option value="in-progress">Doing</option>
-            <option value="done">Done</option>
-          </select>
-        </div>
+      <div className="mb-6 flex items-center space-x-4">
+        <Filter className="h-5 w-5 text-gray-400" />
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value as any)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        >
+          <option value="all">All Tasks</option>
+          <option value="todo">To Do</option>
+          <option value="in-progress">Doing</option>
+          <option value="done">Done</option>
+        </select>
       </div>
 
-      {/* Tasks Grid */}
+      {/* Columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {columns.map(column => (
-          <div key={column.id} className={`bg-white rounded-xl border-2 ${column.color} p-6`}>
+        {columns.map(col => (
+          <div key={col.id} className={`bg-white rounded-xl border-2 ${col.color} p-6`}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">{column.title}</h3>
+              <h3 className="text-xl font-semibold text-gray-900">{col.title}</h3>
               <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                {getTasksByStatus(column.id).length}
+                {getTasksByStatus(col.id).length}
               </span>
             </div>
 
             <div className="space-y-4">
-              {getTasksByStatus(column.id).map(task => (
+              {getTasksByStatus(col.id).map(task => (
                 <div
                   key={task.id}
                   className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
                 >
-                  {/* Task header */}
                   <div className="flex items-start justify-between mb-3">
                     <h4 className="font-medium text-gray-900 text-sm leading-tight">
                       {task.title}
@@ -161,52 +122,34 @@ export default function MyTasks() {
                     {getStatusIcon(task.statusColor)}
                   </div>
 
-                  {/* Task description */}
-                  <p className="text-gray-600 text-xs mb-3">
-                    {task.description}
-                  </p>
+                  <p className="text-gray-600 text-xs mb-3">{task.description}</p>
 
-                  {/* Task metadata */}
                   <div className="space-y-2">
-                    {/* Priority and points */}
                     <div className="flex items-center justify-between">
-                      <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority)}`}>
+                      <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityClasses(task.priority)}`}>
                         {task.priority} priority
                       </span>
                       <span className="text-xs font-medium text-primary-600">
                         {task.points} pts
                       </span>
                     </div>
-
-                    {/* Due date */}
                     <div className="flex items-center text-xs text-gray-500">
                       <Clock className="h-3 w-3 mr-1" />
                       Due {formatDate(task.dueDate)}
                     </div>
-
-                    {/* Tags */}
-                    {task.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {task.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded"
-                          >
-                            <Tag className="h-2 w-2 mr-1" />
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {task.tags.map((tag, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded"
+                        >
+                          <Tag className="h-2 w-2 mr-1" />{tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
-
-              {getTasksByStatus(column.id).length === 0 && (
-                <div className="text-center py-8 text-gray-400">
-                  <p className="text-sm">No tasks in this column</p>
-                </div>
-              )}
             </div>
           </div>
         ))}
