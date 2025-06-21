@@ -21,21 +21,22 @@ app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", True)
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
     """
-    Placeholder for chatbot integration.
-    This route can be used to handle chatbot requests.
+    This route now handles chatbot requests, gets a real response from OpenAI
+    via the bublikchat module, and returns it.
     """
     data = request.get_json()
-    if not data:
-        return jsonify({"status": "error", "message": "Invalid JSON payload"}), 400
+    # Check that the request has a valid JSON body with a 'message' key
+    if not data or "message" not in data:
+        return jsonify({"status": "error", "message": "Invalid request body"}), 400
 
-    message = data.get("message", "")
-    if not message:
-        return jsonify({"status": "error", "message": "No message provided"}), 400
-    else:
-        bublikchat.chat_with_context(message)
+    user_message = data.get("message")
 
-    return jsonify({"status": "success", "message": "Chatbot integration not implemented yet."})
+    # Call the get_answer function from your other file
+    ai_answer = bublikchat.get_answer(user_message)
 
+    # Return the real AI response in a JSON object
+    # The frontend will look for this "answer" key.
+    return jsonify({"answer": ai_answer})
 
 # Routes
 @app.route("/api/ideas", methods=["POST"])
