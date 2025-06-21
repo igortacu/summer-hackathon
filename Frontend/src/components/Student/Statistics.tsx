@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+} from 'recharts';
 import { TrendingUp, Target, Clock, Award } from 'lucide-react';
 
 // --- Contribution Graph Code (Interfaces, Helpers, Components) ---
@@ -37,10 +52,8 @@ const generateMockData = (startDate: Date, endDate: Date): Contribution[] => {
   return data;
 };
 
-
-
 const getColor = (count: number): string => {
-  if (count === 0) return 'bg-white'; // fallback for 0
+  if (count === 0) return 'bg-white';
   if (count <= 2) return 'bg-[#F3D5B5]';
   if (count <= 4) return 'bg-[#E7BC91]';
   if (count <= 6) return 'bg-[#D4A276]';
@@ -58,7 +71,7 @@ const ContributionTooltip: React.FC<TooltipProps> = ({ content, position }) => {
 
   return (
     <div
-      className="absolute z-50 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-md shadow-sm dark:bg-gray-100 dark:text-gray-900 pointer-events-none"
+      className="absolute z-50 px-3 py-1.5 text-xs font-medium text-white bg-[#583101] rounded-md shadow-sm pointer-events-none"
       style={{ left: position.x, top: position.y, transform: 'translate(-50%, -110%)' }}
     >
       {content}
@@ -70,10 +83,10 @@ const ContributionTooltip: React.FC<TooltipProps> = ({ content, position }) => {
 const ContributionGraph: React.FC<{ data: Contribution[] }> = ({ data }) => {
   const [tooltipContent, setTooltipContent] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
-  const graphRef = useRef<HTMLDivElement>(null); // Ref for the graph container
+  const graphRef = useRef<HTMLDivElement>(null);
 
   const contributionsMap = new Map(data.map(item => [item.date, item.count]));
-  
+
   const today = new Date();
   const yearAgo = new Date(today);
   yearAgo.setFullYear(today.getFullYear() - 1);
@@ -81,9 +94,8 @@ const ContributionGraph: React.FC<{ data: Contribution[] }> = ({ data }) => {
 
   const days: DayData[] = [];
   let currentDate = new Date(yearAgo);
-  
-  // Align to a Monday-start week. (0 = Sun, 1 = Mon, ...)
-  const firstDayOfWeek = (currentDate.getDay() === 0) ? 6 : currentDate.getDay() - 1;
+
+  const firstDayOfWeek = currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1;
   for (let i = 0; i < firstDayOfWeek; i++) {
     days.push({ date: `placeholder-${i}`, count: 0, isPlaceholder: true });
   }
@@ -102,7 +114,12 @@ const ContributionGraph: React.FC<{ data: Contribution[] }> = ({ data }) => {
     if (day.isPlaceholder || !graphRef.current) return;
     const graphRect = graphRef.current.getBoundingClientRect();
     const cellRect = event.currentTarget.getBoundingClientRect();
-    const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const date = new Date(day.date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
     const content = `${day.count} contribution${day.count !== 1 ? 's' : ''} on ${date}`;
     setTooltipContent(content);
     setTooltipPosition({
@@ -115,7 +132,7 @@ const ContributionGraph: React.FC<{ data: Contribution[] }> = ({ data }) => {
     setTooltipContent(null);
     setTooltipPosition(null);
   };
-  
+
   const monthLabels: { name: string; column: number }[] = [];
   let lastMonth = -1;
 
@@ -130,24 +147,28 @@ const ContributionGraph: React.FC<{ data: Contribution[] }> = ({ data }) => {
       lastMonth = currentMonth;
     }
   });
-  
+
   return (
     <div className="relative" ref={graphRef}>
       <ContributionTooltip content={tooltipContent} position={tooltipPosition} />
       <div className="flex">
-        <div className="grid grid-rows-7 gap-1 pr-2 text-xs text-gray-500 shrink-0">
-            <div className="h-4"></div>
-            <div className="h-4">Mon</div>
-            <div className="h-4"></div>
-            <div className="h-4">Wed</div>
-            <div className="h-4"></div>
-            <div className="h-4">Fri</div>
-            <div className="h-4"></div>
+        <div className="grid grid-rows-7 gap-1 pr-2 text-xs text-[#8B5E34] shrink-0">
+          <div className="h-4" />
+          <div className="h-4">Mon</div>
+          <div className="h-4" />
+          <div className="h-4">Wed</div>
+          <div className="h-4" />
+          <div className="h-4">Fri</div>
+          <div className="h-4" />
         </div>
         <div className="w-full overflow-x-auto">
-          <div className="relative h-4 mb-1 text-xs text-gray-500">
+          <div className="relative h-4 mb-1 text-xs text-[#8B5E34]">
             {monthLabels.map(({ name, column }) => (
-              <div key={`${name}-${column}`} className="absolute" style={{ left: `calc(${column} * (1rem + 0.25rem))` }}>
+              <div
+                key={`${name}-${column}`}
+                className="absolute"
+                style={{ left: `calc(${column} * (1rem + 0.25rem))` }}
+              >
                 {name}
               </div>
             ))}
@@ -156,63 +177,97 @@ const ContributionGraph: React.FC<{ data: Contribution[] }> = ({ data }) => {
             {days.map((day, index) => (
               <div
                 key={day.isPlaceholder ? `ph-${index}` : day.date}
-                className={`w-4 h-4 rounded-sm ${day.isPlaceholder ? 'bg-transparent' : getColor(day.count)}`}
-                onMouseEnter={(e) => handleMouseEnter(day, e)}
+                className={`w-4 h-4 rounded-sm ${
+                  day.isPlaceholder ? 'bg-transparent' : getColor(day.count)
+                }`}
+                onMouseEnter={e => handleMouseEnter(day, e)}
                 onMouseLeave={handleMouseLeave}
               />
             ))}
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-end mt-4 text-xs text-gray-500">
+      <div className="flex items-center justify-end mt-4 text-xs text-[#8B5E34]">
         <span>Less</span>
-        <div className="w-4 h-4 mx-1 rounded-sm bg-[#FFEDD8]"></div>
-        <div className="w-4 h-4 mx-1 rounded-sm bg-[#E7BC91]"></div>
-        <div className="w-4 h-4 mx-1 rounded-sm bg-[#A47148]"></div>
-        <div className="w-4 h-4 mx-1 rounded-sm bg-[#6F4518]"></div>
-        <div className="w-4 h-4 mx-1 rounded-sm bg-[#583101]"></div>
+        <div className="w-4 h-4 mx-1 rounded-sm bg-[#FFEDB8]" />
+        <div className="w-4 h-4 mx-1 rounded-sm bg-[#E7BC91]" />
+        <div className="w-4 h-4 mx-1 rounded-sm bg-[#A47148]" />
+        <div className="w-4 h-4 mx-1 rounded-sm bg-[#6F4518]" />
+        <div className="w-4 h-4 mx-1 rounded-sm bg-[#583101]" />
         <span>More</span>
       </div>
     </div>
   );
 };
 
-
 // --- Main Statistics Component ---
 
 export default function Statistics() {
   // Mock data for original charts
   const taskStatusData = [
-  { name: 'Completed', value: 8, color: '#A67C52' },   // muted gold
-  { name: 'In Progress', value: 3, color: '#D6BFA8' }, // camel
-  { name: 'To Do', value: 4, color: '#BFA07A' },       // warm taupe
-  { name: 'Overdue', value: 1, color: '#F5E9DA' }      // light sand
-];
+    { name: 'Completed', value: 8, color: '#6F4518' },
+    { name: 'In Progress', value: 3, color: '#BC8A5F' },
+    { name: 'To Do', value: 4, color: '#D4A276' },
+    { name: 'Overdue', value: 1, color: '#F3D5B5' },
+  ];
   const weeklyProgressData = [
     { week: 'Week 1', completed: 2, assigned: 3 },
     { week: 'Week 2', completed: 4, assigned: 5 },
     { week: 'Week 3', completed: 6, assigned: 7 },
     { week: 'Week 4', completed: 8, assigned: 9 },
-    { week: 'Week 5', completed: 8, assigned: 12 }
+    { week: 'Week 5', completed: 8, assigned: 12 },
   ];
   const commitmentData = [
-    { day: 'Mon', hours: 4 }, { day: 'Tue', hours: 6 }, { day: 'Wed', hours: 3 },
-    { day: 'Thu', hours: 8 }, { day: 'Fri', hours: 5 }, { day: 'Sat', hours: 2 },
-    { day: 'Sun', hours: 1 }
+    { day: 'Mon', hours: 4 },
+    { day: 'Tue', hours: 6 },
+    { day: 'Wed', hours: 3 },
+    { day: 'Thu', hours: 8 },
+    { day: 'Fri', hours: 5 },
+    { day: 'Sat', hours: 2 },
+    { day: 'Sun', hours: 1 },
   ];
   const performanceData = [
-    { month: 'Jan', onTime: 85, quality: 90 }, { month: 'Feb', onTime: 78, quality: 85 },
-    { month: 'Mar', onTime: 92, quality: 95 }, { month: 'Apr', onTime: 88, quality: 88 },
-    { month: 'May', onTime: 95, quality: 92 }
+    { month: 'Jan', onTime: 85, quality: 90 },
+    { month: 'Feb', onTime: 78, quality: 85 },
+    { month: 'Mar', onTime: 92, quality: 95 },
+    { month: 'Apr', onTime: 88, quality: 88 },
+    { month: 'May', onTime: 95, quality: 92 },
   ];
   const stats = [
-    { title: 'Completion Rate', value: '75%', change: '+12%', icon: Target, color: 'text-green-600', bgColor: 'bg-green-100' },
-    { title: 'On-Time Delivery', value: '88%', change: '+5%', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-    { title: 'Quality Score', value: '92%', change: '+8%', icon: Award, color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
-    { title: 'Productivity', value: '85%', change: '+15%', icon: TrendingUp, color: 'text-amber-600', bgColor: 'bg-amber-100' }
+    {
+      title: 'Completion Rate',
+      value: '75%',
+      change: '+12%',
+      icon: Target,
+      color: 'text-[#6F4518]',
+      bgColor: 'bg-[#F3D5B5]',
+    },
+    {
+      title: 'On-Time Delivery',
+      value: '88%',
+      change: '+5%',
+      icon: Clock,
+      color: 'text-[#8B5E34]',
+      bgColor: 'bg-[#E7BC91]',
+    },
+    {
+      title: 'Quality Score',
+      value: '92%',
+      change: '+8%',
+      icon: Award,
+      color: 'text-[#A47148]',
+      bgColor: 'bg-[#D4A276]',
+    },
+    {
+      title: 'Productivity',
+      value: '85%',
+      change: '+15%',
+      icon: TrendingUp,
+      color: 'text-[#BC8A5F]',
+      bgColor: 'bg-[#BC8A5F]',
+    },
   ];
-  
-  // State and effect for Contribution Graph data
+
   const [contributions, setContributions] = useState<Contribution[]>([]);
   useEffect(() => {
     const today = new Date();
@@ -224,23 +279,32 @@ export default function Statistics() {
   const totalContributions = contributions.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-[#FFEDB8] min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Statistics</h1>
-        <p className="text-gray-600 mt-1">Detailed insights into your performance and progress</p>
+        <h1 className="text-3xl font-bold text-[#6F4518]">Statistics</h1>
+        <p className="text-[#8B5E34] mt-1">
+          Detailed insights into your performance and progress
+        </p>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl border border-gray-200 p-6">
+          <div
+            key={index}
+            className={`rounded-xl border border-[#BC8A5F] p-6 ${stat.bgColor}`}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className={`text-2xl font-bold ${stat.color} mt-1`}>{stat.value}</p>
-                <p className="text-sm text-green-600 mt-1">{stat.change} from last month</p>
+                <p className="text-sm font-medium text-[#8B5E34]">{stat.title}</p>
+                <p className={`text-2xl font-bold ${stat.color} mt-1`}>
+                  {stat.value}
+                </p>
+                <p className="text-sm text-[#A47148] mt-1">
+                  {stat.change} from last month
+                </p>
               </div>
-              <div className={`${stat.bgColor} p-3 rounded-lg`}>
+              <div className={`p-3 rounded-lg ${stat.bgColor}`}>
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
             </div>
@@ -248,45 +312,59 @@ export default function Statistics() {
         ))}
       </div>
 
-      {/* --- INSERTED CONTRIBUTION GRAPH --- */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">Contribution Activity</h3>
-        <p className="text-sm text-gray-500 mb-4">{totalContributions} contributions in the last year</p>
+      {/* Contribution Graph */}
+      <div className="rounded-xl border border-[#BC8A5F] p-6 mb-8 bg-[#F3D5B5]">
+        <h3 className="text-lg font-semibold text-[#6F4518] mb-1">
+          Contribution Activity
+        </h3>
+        <p className="text-sm text-[#8B5E34] mb-4">
+          {totalContributions} contributions in the last year
+        </p>
         <ContributionGraph data={contributions} />
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Task Status Distribution */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Task Status Distribution</h3>
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#F3D5B5]">
+          <h3 className="text-lg font-semibold text-[#6F4518] mb-4">
+            Task Status Distribution
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={taskStatusData} cx="50%" cy="50%" labelLine={false}
+                data={taskStatusData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80} fill="#8884d8" dataKey="value"
+                outerRadius={80}
+                dataKey="value"
               >
-                {taskStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {taskStatusData.map((entry, idx) => (
+                  <Cell key={`cell-${idx}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#FFEDB8', border: '1px solid #BC8A5F' }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
         {/* Weekly Progress */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Progress</h3>
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#E7BC91]">
+          <h3 className="text-lg font-semibold text-[#6F4518] mb-4">Weekly Progress</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weeklyProgressData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="week" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="assigned" fill="#e5e7eb" name="Assigned" />
-              <Bar dataKey="completed" fill="#3b82f6" name="Completed" />
+              <CartesianGrid stroke="#BC8A5F" strokeDasharray="3 3" />
+              <XAxis dataKey="week" stroke="#6F4518" />
+              <YAxis stroke="#6F4518" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#FFEDB8', border: '1px solid #BC8A5F' }}
+              />
+              <Bar dataKey="assigned" fill="#D4A276" name="Assigned" />
+              <Bar dataKey="completed" fill="#6F4518" name="Completed" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -295,43 +373,89 @@ export default function Statistics() {
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Daily Commitment */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Time Commitment</h3>
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#D4A276]">
+          <h3 className="text-lg font-semibold text-[#6F4518] mb-4">
+            Daily Time Commitment
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={commitmentData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Area type="monotone" dataKey="hours" stroke="#14b8a6" fill="#14b8a6" fillOpacity={0.3} />
+              <CartesianGrid stroke="#BC8A5F" strokeDasharray="3 3" />
+              <XAxis dataKey="day" stroke="#6F4518" />
+              <YAxis stroke="#6F4518" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#FFEDB8', border: '1px solid #BC8A5F' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="hours"
+                stroke="#8B5E34"
+                fill="#8B5E34"
+                fillOpacity={0.3}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Performance Trends */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Trends</h3>
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#BC8A5F]">
+          <h3 className="text-lg font-semibold text-[#F3D5B5] mb-4">
+            Performance Trends
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={performanceData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="onTime" stroke="#3b82f6" strokeWidth={2} name="On-Time %" />
-              <Line type="monotone" dataKey="quality" stroke="#f97316" strokeWidth={2} name="Quality %" />
+              <CartesianGrid stroke="#6F4518" strokeDasharray="3 3" />
+              <XAxis dataKey="month" stroke="#6F4518" />
+              <YAxis stroke="#6F4518" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#FFEDB8', border: '1px solid #6F4518' }}
+              />
+              <Line
+                type="monotone"
+                dataKey="onTime"
+                stroke="#6F4518"
+                strokeWidth={2}
+                name="On-Time %"
+              />
+              <Line
+                type="monotone"
+                dataKey="quality"
+                stroke="#D4A276"
+                strokeWidth={2}
+                name="Quality %"
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
-      
-       {/* Insights */}
-      <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Insights</h3>
+
+      {/* Insights */}
+      <div className="mt-8 bg-gradient-to-r from-[#FFEDB8] to-[#E7BC91] rounded-xl p-6 border border-[#BC8A5F]">
+        <h3 className="text-lg font-semibold text-[#6F4518] mb-4">Key Insights</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg p-4"><h4 className="font-medium text-gray-900 mb-2">🎯 Strong Performance</h4><p className="text-sm text-gray-600">Your completion rate has improved by 12% this month, showing consistent progress.</p></div>
-          <div className="bg-white rounded-lg p-4"><h4 className="font-medium text-gray-900 mb-2">⚡ Peak Productivity</h4><p className="text-sm text-gray-600">Thursday is your most productive day with an average of 8 hours of focused work.</p></div>
-          <div className="bg-white rounded-lg p-4"><h4 className="font-medium text-gray-900 mb-2">📈 Quality Improvement</h4><p className="text-sm text-gray-600">Your work quality score has increased to 92%, reflecting attention to detail.</p></div>
-          <div className="bg-white rounded-lg p-4"><h4 className="font-medium text-gray-900 mb-2">🎯 Focus Area</h4><p className="text-sm text-gray-600">Consider addressing the 1 overdue task to maintain your excellent track record.</p></div>
+          <div className="bg-[#FFEDB8] rounded-lg p-4">
+            <h4 className="font-medium text-[#6F4518] mb-2">🎯 Strong Performance</h4>
+            <p className="text-sm text-[#8B5E34]">
+              Your completion rate has improved by 12% this month, showing consistent progress.
+            </p>
+          </div>
+          <div className="bg-[#FFEDB8] rounded-lg p-4">
+            <h4 className="font-medium text-[#6F4518] mb-2">⚡ Peak Productivity</h4>
+            <p className="text-sm text-[#8B5E34]">
+              Thursday is your most productive day with an average of 8 hours of focused work.
+            </p>
+          </div>
+          <div className="bg-[#FFEDB8] rounded-lg p-4">
+            <h4 className="font-medium text-[#6F4518] mb-2">📈 Quality Improvement</h4>
+            <p className="text-sm text-[#8B5E34]">
+              Your work quality score has increased to 92%, reflecting attention to detail.
+            </p>
+          </div>
+          <div className="bg-[#FFEDB8] rounded-lg p-4">
+            <h4 className="font-medium text-[#6F4518] mb-2">🎯 Focus Area</h4>
+            <p className="text-sm text-[#8B5E34]">
+              Consider addressing the 1 overdue task to maintain your excellent track record.
+            </p>
+          </div>
         </div>
       </div>
     </div>
