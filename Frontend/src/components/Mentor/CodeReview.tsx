@@ -30,7 +30,6 @@ type Comment = {
   text: string;
 };
 
-
 export default function CodeReview() {
   // --- STATE MANAGEMENT ---
   const [selectedRepo, setSelectedRepo] = useState('studybuddy-app');
@@ -44,7 +43,6 @@ export default function CodeReview() {
   const repositories = [
     { id: 'studybuddy-app', name: 'StudyBuddy Mobile App', group: 'StudyBuddy Team' },
     { id: 'ecotracker-web', name: 'EcoTracker Web Platform', group: 'EcoTracker Team' },
-    // NEW: Added a repository with no associated data to test empty states
     { id: 'empty-project', name: 'Empty Project', group: 'Test Group' }
   ];
   
@@ -126,7 +124,7 @@ export default function CodeReview() {
               <div className="space-y-3">
                 {filteredCommits.length > 0 ? filteredCommits.map(commit => (
                   <div key={commit.id} onClick={() => setActiveCommit(commit)}
-                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${activeCommit?.id === commit.id ? 'bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-gray-100'}`}>
+                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${activeCommit?.id === commit.id ? 'bg-[#FFEDB8] border border-[#8B5E34] text-[#8B5E34]' : 'hover:bg-gray-100'}`}>
                     <div className="flex items-center mb-2"><AuthorAvatar name={commit.author} /><div className="ml-3"><p className="text-sm font-semibold text-gray-800">{commit.author}</p><p className="text-xs text-gray-500">{commit.date}</p></div></div>
                     <p className="text-sm text-gray-700 leading-snug">{commit.message}</p>
                   </div>
@@ -138,7 +136,7 @@ export default function CodeReview() {
               <div className="space-y-2">
                 {filteredPullRequests.length > 0 ? filteredPullRequests.map(pr => (
                   <div key={pr.id} onClick={() => setActivePullRequest(pr)}
-                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${activePullRequest?.id === pr.id ? 'bg-indigo-50 ring-1 ring-indigo-400' : 'hover:bg-gray-100'}`}>
+                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${activePullRequest?.id === pr.id ? 'bg-[#FFEDB8] border border-[#8B5E34] text-[#8B5E34]' : 'hover:bg-gray-100'}`}>
                     <div className="flex items-center justify-between"><p className="text-sm font-semibold text-gray-800">{pr.title}</p><StatusBadge status={pr.status}/></div>
                     <div className="mt-2 flex items-center text-xs text-gray-500"><span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-md">{pr.branch}</span></div>
                   </div>
@@ -156,8 +154,8 @@ export default function CodeReview() {
                   <div className="divide-y divide-gray-200">
                     {activeCommit?.changedFiles.map((file, index) => (
                       <div key={index} onClick={() => setSelectedFile(file)}
-                        className={`flex items-center justify-between p-4 cursor-pointer transition-colors duration-200 ${selectedFile?.path === file.path ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}>
-                        <div className="flex items-center min-w-0"><FileText className="h-5 w-5 mr-3 text-gray-400 flex-shrink-0"/><span className={`text-sm font-medium truncate ${selectedFile?.path === file.path ? 'text-indigo-700' : 'text-gray-800'}`}>{file.path}</span></div>
+                        className={`flex items-center justify-between p-4 cursor-pointer transition-colors duration-200 ${selectedFile?.path === file.path ? 'bg-[#FFEDB8] border border-[#8B5E34] text-[#8B5E34]' : 'hover:bg-gray-50'}`}>
+                        <div className="flex items-center min-w-0"><FileText className="h-5 w-5 mr-3 text-gray-400 flex-shrink-0"/><span className={`text-sm font-medium truncate ${selectedFile?.path === file.path ? 'text-[#8B5E34]' : 'text-gray-800'}`}>{file.path}</span></div>
                         <div className="flex items-center space-x-2 text-sm flex-shrink-0 ml-4"><span className="font-bold text-green-600 flex items-center"><PlusCircle className="h-4 w-4 mr-1"/>{file.additions}</span><span className="font-bold text-red-600 flex items-center"><MinusCircle className="h-4 w-4 mr-1"/>{file.deletions}</span></div>
                       </div>
                     ))}
@@ -179,7 +177,7 @@ export default function CodeReview() {
                         <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)}
                           placeholder={activeCommit ? `Comment on commit ${activeCommit.hash}...` : 'Select a commit to comment on'}
                           rows={3} className="w-full p-3 text-sm border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"/>
-                        <button onClick={handleAddComment} className="mt-2 float-right px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400" disabled={!commentText.trim()}>
+                        <button onClick={handleAddComment} className="mt-2 float-right px-4 py-2 bg-[#8B5E34] text-white text-sm font-semibold rounded-lg hover:bg-[#A47148] transition-colors disabled:bg-gray-400" disabled={!commentText.trim()}>
                           Add Comment
                         </button>
                       </div>

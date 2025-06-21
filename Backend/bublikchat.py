@@ -1,10 +1,8 @@
 # bublik.py
-
 import os
 import sqlite3
 from dotenv import load_dotenv
 from openai import OpenAI
-
 # ———————————————
 # 1) Load env & instantiate client
 # ———————————————
