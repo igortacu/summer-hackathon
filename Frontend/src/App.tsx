@@ -19,6 +19,8 @@ import Sidebar from './components/Layout/Sidebar';
 import ChatList from './components/Student/ChatList';
 import Chat from './components/Student/Chat';
 import LandingPage from './components/Layout/LandingPage';
+// MODIFICATION: Import the AIAssistant component
+import AIAssistant from './components/Student/AIAssistant';
 
 // Re-declare the same Task interface MyTasks expects
 interface Task {
@@ -295,6 +297,9 @@ export default function App() {
           participants={selectedChat?.participants || []}
           userRole={user.role}
         />
+
+        {/* MODIFICATION: Conditionally render the AI Assistant only on the dashboard tab */}
+        {activeTab === 'dashboard' && <AIAssistant />}
       </div>
     );
   }
