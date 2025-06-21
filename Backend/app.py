@@ -87,6 +87,7 @@ def register():
             role=data.get("role"),
             password=data.get("password"),
             project_name=data.get("project_name"),
+            github_url=data.get("github_url", None), 
         )
 
         # Register the user with the database

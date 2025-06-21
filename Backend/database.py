@@ -11,6 +11,7 @@ class User:
         role,
         password,
         project_name,
+        github_url,
     ):
         self.name = name
         self.academic_group = academic_group
@@ -19,6 +20,29 @@ class User:
         self.role = role
         self.password = password
         self.project_name = project_name
+        self.github_url = github_url 
+
+    def __iter__(self):
+        for key in self.__dict__:
+            yield key, getattr(self, key)
+class Task:
+    def __init__(
+        self,
+        id,
+        title,
+        description,
+        assigned_to,
+        status,
+        priority,
+        due_date,
+    ):
+       self.id = id
+       self.title = title
+       self.description = description
+       self.assigned_to = assigned_to
+       self.status = status
+       self.priority = priority
+       self.due_date = due_date
 
     def __iter__(self):
         for key in self.__dict__:
@@ -49,6 +73,21 @@ cursor.execute(
     )
 """
 )
+
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        assigned_to TEXT NOT NULL,
+        status TEXT NOT NULL,
+        priority TEXT NOT NULL,
+        due_date DATE NOT NULL
+    )
+"""
+)
+
 conn.commit()
 
 
@@ -76,8 +115,9 @@ def sign_in(user: User):
             email,
             role,
             password,
-            "Project name"
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            "Project name",
+            github_url
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """,
         (
             user.name,
@@ -87,6 +127,7 @@ def sign_in(user: User):
             user.role,
             user.password,
             user.project_name,
+            user.github_url
         ),
     )
     conn.commit()
@@ -105,6 +146,42 @@ def get_github_urls_by_pbl_group(pbl_group_number):
     return [row[0] for row in cursor.fetchall()]
 
 
+def new_task(task: Task):
+    """
+    Adds a new task to the tasks table.
+    """
+    cursor.execute(
+        """
+        INSERT INTO tasks (
+            title,
+            description,
+            assigned_to,
+            status,
+            priority,
+            due_date
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            task.title,
+            task.description,
+            task.assigned_to,
+            task.status,
+            task.priority,
+            task.due_date,
+        ),
+    )
+    conn.commit()
+
+def get_tasks():
+    """
+    Returns a list of tasks assigned to the user with the given id.
+    """
+    cursor.execute(
+        "SELECT * FROM tasks"
+    )
+    return [Task(*row) for row in cursor.fetchall()]
+
+
 # 6. Example usage: fetch GitHub links for your existing PBL group
 if __name__ == "main":
 
@@ -114,33 +191,23 @@ if __name__ == "main":
 
     conn.close()
 
+
 def init_convo_db():
 
-
     conn = sqlite3.connect("bublik_convo.db")
-
-
     c = conn.cursor()
 
-
-    c.execute("""
-
-
+    c.execute(
+    """
         CREATE TABLE IF NOT EXISTS convo (
-
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             role TEXT NOT NULL,
-
             content TEXT NOT NULL,
-
             ts DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-
-    """)
-
+    """
+    )
 
     conn.commit()
-
 
     conn.close()
