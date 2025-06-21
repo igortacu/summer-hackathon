@@ -6,7 +6,8 @@ import {
   BarChart3, 
   Users, 
   Calendar,
-  FileText
+  FileText,
+  MessageCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -21,6 +22,7 @@ export default function Sidebar({ activeTab, onTabChange, userRole }: SidebarPro
     { id: 'projects', label: 'My Projects', icon: FolderOpen },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
+    { id: 'chat', label: 'Team Chat', icon: MessageCircle },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
   ];
 
@@ -29,6 +31,7 @@ export default function Sidebar({ activeTab, onTabChange, userRole }: SidebarPro
     { id: 'groups', label: 'My Groups', icon: Users },
     { id: 'review', label: 'Code Review', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'chats', label: 'Group Chats', icon: MessageCircle },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
   ];
 

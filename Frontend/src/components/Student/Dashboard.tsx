@@ -11,6 +11,20 @@ import {
 } from 'lucide-react';
 import KanbanBoard from './KanbanBoard';
 import StatsCards from './StatsCards';
+import TaskModal from './TaskModal';
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  assignedTo: string;
+  status: 'todo' | 'in-progress' | 'done';
+  priority: 'low' | 'medium' | 'high';
+  dueDate: Date;
+  statusColor: 'green' | 'yellow' | 'red';
+  points: number;
+  tags: string[];
+}
 
 interface DashboardProps {
   projectData: any;
@@ -20,6 +34,8 @@ export default function Dashboard({ projectData }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Mock data for demonstration
   const stats = {
@@ -37,7 +53,7 @@ export default function Dashboard({ projectData }: DashboardProps) {
     }
   };
 
-  const [tasks, setTasks] = useState([
+  const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
       title: 'Research existing solutions',
@@ -101,19 +117,42 @@ export default function Dashboard({ projectData }: DashboardProps) {
   ]);
 
   const handleAddTask = () => {
-    const newTask = {
-      id: Date.now().toString(),
-      title: 'New Task',
-      description: 'Task description',
-      assignedTo: 'Unassigned',
-      status: 'todo' as const,
-      priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 604800000), // 7 days from now
-      statusColor: 'green' as const,
-      points: 10,
-      tags: ['new']
-    };
-    setTasks(prev => [...prev, newTask]);
+    setEditingTask(null);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleSaveTask = (taskData: Omit<Task, 'id' | 'statusColor'>) => {
+    if (editingTask) {
+      // Update existing task
+      setTasks(prev => prev.map(task => 
+        task.id === editingTask.id 
+          ? { ...task, ...taskData, statusColor: getStatusColor(taskData.dueDate) }
+          : task
+      ));
+    } else {
+      // Create new task
+      const newTask: Task = {
+        ...taskData,
+        id: Date.now().toString(),
+        statusColor: getStatusColor(taskData.dueDate)
+      };
+      setTasks(prev => [...prev, newTask]);
+    }
+  };
+
+  const getStatusColor = (dueDate: Date): 'green' | 'yellow' | 'red' => {
+    const now = new Date();
+    const timeDiff = dueDate.getTime() - now.getTime();
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+
+    if (daysDiff < 0) return 'red'; // Overdue
+    if (daysDiff < 1) return 'yellow'; // Due soon
+    return 'green'; // On time
   };
 
   const handleTaskUpdate = (taskId: string, updates: any) => {
@@ -222,6 +261,14 @@ export default function Dashboard({ projectData }: DashboardProps) {
 
       {/* Kanban Board */}
       <KanbanBoard tasks={filteredTasks} onTaskUpdate={handleTaskUpdate} />
+
+      {/* Task Modal */}
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSave={handleSaveTask}
+        task={editingTask}
+      />
     </div>
   );
 }
