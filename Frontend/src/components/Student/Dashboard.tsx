@@ -1,10 +1,6 @@
+// src/components/Student/Dashboard.tsx
 import React, { useState } from 'react';
-import { 
-  CheckSquare, 
-  Clock, 
-  AlertTriangle, 
-  TrendingUp, 
-  Users, 
+import {
   Plus,
   Filter,
   Search
@@ -12,6 +8,16 @@ import {
 import KanbanBoard from './KanbanBoard';
 import StatsCards from './StatsCards';
 import TaskModal from './TaskModal';
+import { parseEmailName } from '../../utils/parseEmailName';
+
+interface AiTask {
+  title: string;
+  description: string;
+  assignedRole: string;
+  priority: 'low' | 'medium' | 'high';
+  estimatedDays: number;
+  tags: string[];
+}
 
 interface Task {
   id: string;
@@ -27,187 +33,181 @@ interface Task {
 }
 
 interface DashboardProps {
-  projectData: any;
+  projectData: {
+    projectName: string;
+    description?: string;
+    members: string[]; // emails
+    roles: string[];   // yourRole + each member’s role
+  };
+  problemData: {
+    tasks: AiTask[];
+  };
+  userRole: string;
 }
 
-export default function Dashboard({ projectData }: DashboardProps) {
-  const [filterStatus, setFilterStatus] = useState('all');
+export default function Dashboard({
+  projectData,
+  problemData,
+  userRole
+}: DashboardProps) {
+  // UI state
+  const [filterStatus, setFilterStatus] =
+    useState<'all' | 'todo' | 'in-progress' | 'done'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  // Mock data for demonstration
+  // Helpers
+  function getStatusColor(dueDate?: Date): 'green' | 'yellow' | 'red' {
+    if (!dueDate) return 'green';
+    const diffDays = (dueDate.getTime() - Date.now()) / (1000 * 3600 * 24);
+    if (diffDays < 0) return 'red';
+    if (diffDays < 1) return 'yellow';
+    return 'green';
+  }
+
+  // Initialize boardTasks from AI analysis
+  const [boardTasks, setBoardTasks] = useState<Task[]>(() =>
+    (problemData.tasks || []).map((t, i) => {
+      const due = new Date(Date.now() + t.estimatedDays * 24 * 3600 * 1000);
+      return {
+        id: String(i),
+        title: t.title,
+        description: t.description,
+        assignedTo: t.assignedRole,
+        status: 'todo',
+        priority: t.priority,
+        dueDate: due,
+        statusColor: getStatusColor(due),
+        points: t.estimatedDays,
+        tags: t.tags
+      };
+    })
+  );
+
+  // Stats calculations
+  const totalTasks     = boardTasks.length;
+  const completedTasks = boardTasks.filter(t => t.status === 'done').length;
+  const onTimeTasks    = boardTasks.filter(t => getStatusColor(t.dueDate) === 'green').length;
+  const nearDueTasks   = boardTasks.filter(t => getStatusColor(t.dueDate) === 'yellow').length;
+  const overdueTasks   = boardTasks.filter(t => getStatusColor(t.dueDate) === 'red').length;
+  const totalPoints    = boardTasks.reduce((sum, t) => sum + t.points, 0);
+
+  // Team performance
+  const memberPoints: Record<string, number> = {};
+  memberPoints['You'] = boardTasks
+    .filter(t => t.assignedTo === userRole)
+    .reduce((sum, t) => sum + t.points, 0);
+
+  projectData.members.forEach((email, idx) => {
+    const displayName = parseEmailName(email);
+    const role = projectData.roles[idx + 1];
+    if (!role) return;
+    memberPoints[displayName] = boardTasks
+      .filter(t => t.assignedTo === role)
+      .reduce((sum, t) => sum + t.points, 0);
+  });
+
   const stats = {
-    totalTasks: 12,
-    completedTasks: 4,
-    onTimeTasks: 8,
-    nearDueTasks: 2,
-    overdueTasks: 1,
-    totalPoints: 240,
-    memberPoints: {
-      'self': 65,
-      'john@example.com': 45,
-      'jane@example.com': 70,
-      'mike@example.com': 60
-    }
+    totalTasks,
+    completedTasks,
+    onTimeTasks,
+    nearDueTasks,
+    overdueTasks,
+    totalPoints,
+    memberPoints
   };
 
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Research existing solutions',
-      description: 'Analyze competitor apps and identify key features',
-      assignedTo: 'Research Analyst',
-      status: 'done' as const,
-      priority: 'high' as const,
-      dueDate: new Date(Date.now() - 86400000),
-      statusColor: 'green' as const,
-      points: 25,
-      tags: ['research', 'analysis']
-    },
-    {
-      id: '2',
-      title: 'Design system architecture',
-      description: 'Create technical architecture diagrams and tech stack decisions',
-      assignedTo: 'Backend Developer',
-      status: 'in-progress' as const,
-      priority: 'high' as const,
-      dueDate: new Date(Date.now() + 172800000),
-      statusColor: 'green' as const,
-      points: 35,
-      tags: ['architecture', 'backend']
-    },
-    {
-      id: '3',
-      title: 'Create wireframes',
-      description: 'Design user interface wireframes for all main screens',
-      assignedTo: 'UI/UX Designer',
-      status: 'in-progress' as const,
-      priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 43200000),
-      statusColor: 'yellow' as const,
-      points: 30,
-      tags: ['design', 'ui']
-    },
-    {
-      id: '4',
-      title: 'Setup development environment',
-      description: 'Configure development tools and CI/CD pipeline',
-      assignedTo: 'Frontend Developer',
-      status: 'todo' as const,
-      priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 259200000),
-      statusColor: 'green' as const,
-      points: 20,
-      tags: ['setup', 'devops']
-    },
-    {
-      id: '5',
-      title: 'Database schema design',
-      description: 'Design database structure and relationships',
-      assignedTo: 'Backend Developer',
-      status: 'todo' as const,
-      priority: 'high' as const,
-      dueDate: new Date(Date.now() - 43200000),
-      statusColor: 'red' as const,
-      points: 40,
-      tags: ['database', 'backend']
-    }
-  ]);
+  // Search & filter
+  const filtered = boardTasks.filter(t => {
+    const matchSearch =
+      t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus =
+      filterStatus === 'all' || t.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+  const roleFiltered = filtered.filter(t => t.assignedTo === userRole);
 
+  // Handlers
   const handleAddTask = () => {
     setEditingTask(null);
     setIsTaskModalOpen(true);
   };
-
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsTaskModalOpen(true);
   };
-
-  const handleSaveTask = (taskData: Omit<Task, 'id' | 'statusColor'>) => {
+  const handleSaveTask = (data: Omit<Task, 'id' | 'statusColor'>) => {
     if (editingTask) {
-      // Update existing task
-      setTasks(prev => prev.map(task => 
-        task.id === editingTask.id 
-          ? { ...task, ...taskData, statusColor: getStatusColor(taskData.dueDate) }
-          : task
-      ));
+      // Update existing
+      setBoardTasks(prev =>
+        prev.map(t =>
+          t.id === editingTask.id
+            ? { ...t, ...data, statusColor: getStatusColor(data.dueDate) }
+            : t
+        )
+      );
     } else {
-      // Create new task
+      // Create new, default status=todo
       const newTask: Task = {
-        ...taskData,
+        ...data,
         id: Date.now().toString(),
-        statusColor: getStatusColor(taskData.dueDate)
+        status: 'todo',
+        statusColor: getStatusColor(data.dueDate)
       };
-      setTasks(prev => [...prev, newTask]);
+      setBoardTasks(prev => [...prev, newTask]);
     }
+    setIsTaskModalOpen(false);
   };
-
-  const getStatusColor = (dueDate: Date): 'green' | 'yellow' | 'red' => {
-    const now = new Date();
-    const timeDiff = dueDate.getTime() - now.getTime();
-    const daysDiff = timeDiff / (1000 * 3600 * 24);
-
-    if (daysDiff < 0) return 'red'; // Overdue
-    if (daysDiff < 1) return 'yellow'; // Due soon
-    return 'green'; // On time
+  const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
+    setBoardTasks(prev =>
+      prev.map(t =>
+        t.id === taskId
+          ? { ...t, ...updates, statusColor: getStatusColor(updates.dueDate ?? t.dueDate) }
+          : t
+      )
+    );
   };
-
-  const handleTaskUpdate = (taskId: string, updates: any) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, ...updates } : task
-    ));
-  };
-
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || task.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{projectData?.name || 'Project Dashboard'}</h1>
-            <p className="text-gray-600 mt-1">Track your progress and manage tasks</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handleAddTask}
-              className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </button>
-          </div>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between">
+        <div className="mb-4 sm:mb-0">
+          <h1 className="text-3xl font-bold text-gray-900">{projectData.projectName}</h1>
+          <p className="text-gray-600 mt-1">Track your progress and manage tasks</p>
         </div>
+        <button
+          onClick={handleAddTask}
+          className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          <Plus className="h-4 w-4 mr-2" /> New Task
+        </button>
       </div>
 
       {/* Stats Cards */}
-      <StatsCards stats={stats} />
+      <div className="mb-8">
+        <StatsCards stats={stats} />
+      </div>
 
-      {/* Filters and Search */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
+      {/* Filters */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center flex-1">
+          <div className="relative flex-1 mb-4 sm:mb-0 sm:mr-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search tasks..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={e => setFilterStatus(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="all">All Tasks</option>
@@ -216,51 +216,25 @@ export default function Dashboard({ projectData }: DashboardProps) {
             <option value="done">Completed</option>
           </select>
         </div>
-        <button 
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+        <button
+          onClick={() => setShowFilters(f => !f)}
+          className="mt-4 sm:mt-0 px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
         >
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
+          <Filter className="h-4 w-4 mr-2 inline" /> Filters
         </button>
       </div>
 
-      {/* Advanced Filters Panel */}
+      {/* Optional Advanced Filters */}
       {showFilters && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="">All Priorities</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="">All Members</option>
-                <option value="self">Me</option>
-                <option value="others">Others</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="">All Dates</option>
-                <option value="overdue">Overdue</option>
-                <option value="today">Due Today</option>
-                <option value="week">This Week</option>
-              </select>
-            </div>
-          </div>
+          {/* add advanced filter UI here */}
         </div>
       )}
 
-      {/* Kanban Board */}
-      <KanbanBoard tasks={filteredTasks} onTaskUpdate={handleTaskUpdate} />
+      {/* Kanban */}
+      <div className="overflow-x-auto">
+        <KanbanBoard tasks={roleFiltered} onTaskUpdate={handleTaskUpdate} />
+      </div>
 
       {/* Task Modal */}
       <TaskModal
