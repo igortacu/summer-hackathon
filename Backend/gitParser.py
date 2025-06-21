@@ -1,6 +1,16 @@
 import subprocess
-import os
+# import os
 
+"""
+{
+    hash:
+    message:
+    files:
+    author:
+    email:
+    date:
+}
+"""
 
 """ Format
 # commit <hash> #! [-1]
@@ -37,35 +47,36 @@ def get_commits(out: str) -> dict[str, list[str]]:
     return tps
 
 
-def parse_commit(commits: dict[str, list[str]]) -> dict[str, any]:
+def parse_commit(commits: dict[str, list[str]]) -> list[dict[str, any]]:
     """
-    # Commit: <author> <\<email\>> #! [2]
-    # CommitDate: <date> #! [3]
+    - Commit: <author> <\<email\>> #! [2]
+    - CommitDate: <date> #! [3]
     """
     out = []
     for hash, lines in commits.items():
         o = {}
         author_line = list(filter(lambda x: x != "", lines[2].split(" ")))
         date_line = list(filter(lambda x: x != "", lines[3].split(" ")))
-        o["message"] = lines[4]
+        o["hash"] = hash
+        o["message"] = lines[4].strip()
         o["files"] = lines[5:]
 
-        o["author"] = " ".join(author_line[1:-1]), hash
+        o["author"] = " ".join(author_line[1:-1]).strip()
         o["email"] = author_line[-1].strip().replace("<", "").replace(">", "")
         o["date"] = " ".join(date_line[1:])
         out.append(o)
     return out
 
 
-def get_git_data() -> dict[str, any]:
+def get_git_data() -> list[dict[str, any]]:
     """
     Returns a dictionary with the git data.
     """
-
+    # git log --stat --pretty=fuller
     cmd = ["git", "log", "--stat", "--pretty=fuller"]
 
-    path = "/home/dani/faf/faf_bot_go"
-    os.chdir(path)
+    # path = "/home/dani/faf/faf_bot_go"
+    # os.chdir(path)
 
     res = subprocess.check_output(cmd)
 
