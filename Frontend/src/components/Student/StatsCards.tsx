@@ -1,30 +1,45 @@
-import React from 'react';
+import { useState, useEffect } from 'react'; // Import useEffect as well for initial random value
 import { CheckSquare, Clock, AlertTriangle, TrendingUp, Trophy, Users } from 'lucide-react';
+import PointsDetail from './Mark_assign'; // Assuming mark_assign.tsx is in the same directory or adjust path
 
 interface StatsCardsProps {
   stats: {
+    // We'll generate totalPoints internally now, so it's not strictly needed from props
+    // totalPoints: number; // You might remove this from the actual prop interface if it's always random
     totalTasks: number;
     completedTasks: number;
     onTimeTasks: number;
     nearDueTasks: number;
     overdueTasks: number;
-    totalPoints: number;
     memberPoints: { [key: string]: number };
   };
 }
 
 export default function StatsCards({ stats }: StatsCardsProps) {
-  const completionRate = Math.round((stats.completedTasks / stats.totalTasks) * 100);
-  const onTimeRate = Math.round((stats.onTimeTasks / stats.totalTasks) * 100);
+  const [showPointsDetail, setShowPointsDetail] = useState(false);
+  const [randomTotalPoints, setRandomTotalPoints] = useState(0); // New state for random points
+
+  // Generate random points when the component mounts
+  useEffect(() => {
+    // Generate a random number between 50 and 100 for total points
+    const minPoints = 50;
+    const maxPoints = 100;
+    const generatedPoints = Math.floor(Math.random() * (maxPoints - minPoints + 1)) + minPoints;
+    setRandomTotalPoints(generatedPoints);
+  }, []); // Empty dependency array means this runs once on mount
+
+  const completionRate = stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0;
+  const onTimeRate = stats.totalTasks > 0 ? Math.round((stats.onTimeTasks / stats.totalTasks) * 100) : 0;
 
   const statCards = [
     {
       title: 'Total Tasks',
-      value: stats.totalTasks,
+      value: stats.totalTasks, // Still uses original stats.totalTasks if provided
       icon: CheckSquare,
       color: 'bg-primary-500',
       bgColor: 'bg-primary-50',
-      textColor: 'text-primary-700'
+      textColor: 'text-primary-700',
+      onClick: undefined,
     },
     {
       title: 'Completed',
@@ -32,7 +47,8 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: CheckSquare,
       color: 'bg-success-500',
       bgColor: 'bg-success-50',
-      textColor: 'text-success-700'
+      textColor: 'text-success-700',
+      onClick: undefined,
     },
     {
       title: 'Near Due',
@@ -40,7 +56,8 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Clock,
       color: 'bg-warning-500',
       bgColor: 'bg-warning-50',
-      textColor: 'text-warning-700'
+      textColor: 'text-warning-700',
+      onClick: undefined,
     },
     {
       title: 'Overdue',
@@ -48,7 +65,8 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: AlertTriangle,
       color: 'bg-error-500',
       bgColor: 'bg-error-50',
-      textColor: 'text-error-700'
+      textColor: 'text-error-700',
+      onClick: undefined,
     },
     {
       title: 'On-Time Rate',
@@ -56,15 +74,17 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: TrendingUp,
       color: 'bg-secondary-500',
       bgColor: 'bg-secondary-50',
-      textColor: 'text-secondary-700'
+      textColor: 'text-secondary-700',
+      onClick: undefined,
     },
     {
       title: 'Total Points',
-      value: stats.totalPoints,
+      value: randomTotalPoints, // Use the generated random points here
       icon: Trophy,
       color: 'bg-accent-500',
       bgColor: 'bg-accent-50',
-      textColor: 'text-accent-700'
+      textColor: 'text-accent-700',
+      onClick: () => setShowPointsDetail(true),
     }
   ];
 
@@ -75,7 +95,11 @@ export default function StatsCards({ stats }: StatsCardsProps) {
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className={`${stat.bgColor} rounded-xl p-4 border border-gray-200`}>
+            <div
+              key={index}
+              className={`${stat.bgColor} rounded-xl p-4 border border-gray-200 cursor-pointer`}
+              onClick={stat.onClick}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
@@ -116,6 +140,22 @@ export default function StatsCards({ stats }: StatsCardsProps) {
           ))}
         </div>
       </div>
+
+      {/* Points Detail Modal/Component */}
+      {showPointsDetail && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl relative max-w-3xl w-full m-4">
+            <button
+              onClick={() => setShowPointsDetail(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            >
+              &times;
+            </button>
+            {/* Pass randomTotalPoints as a prop */}
+            <PointsDetail currentTotalPoints={randomTotalPoints} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
