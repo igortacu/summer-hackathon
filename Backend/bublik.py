@@ -1,44 +1,131 @@
 # bublik.py
 
 import os
+import sqlite3
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# 1. Load environment variables from .env
+# ———————————————
+# 1) Load env & instantiate client
+# ———————————————
 load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise RuntimeError("Make sure .env contains OPENAI_API_KEY=…")
+client = OpenAI(api_key=api_key)
 
-# 2. Instantiate the new OpenAI client
-client = OpenAI()
+# ———————————————
+# 2) Paths
+# ———————————————
+USER_DB_PATH = "my_database.db"  # your existing DB
+CONVO_DB_PATH = "bublik_convo.db"  # our chat history
 
-def get_ideas_from_text(prompt_text: str, n_ideas: int = 5) -> str:
+# ———————————————
+# 3) Read project + roles from your existing users table
+# ———————————————
+def load_project_and_roles():
     """
-    Send the user’s text to OpenAI’s chat endpoint and
-    return a list of creative ideas.
+    Connect to your existing `my_database.db` and pull:
+      - project_name: assumed identical across all rows
+      - roles: dict of {name: role}
     """
+    conn = sqlite3.connect(USER_DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        SELECT name, role, "Project name"
+        FROM users
+    ''')
+    rows = c.fetchall()
+    conn.close()
+    if not rows:
+        raise RuntimeError("No users found in my_database.db → users table is empty.")
+    # assume project name is the same on every row:
+    project_name = rows[0][2]
+    roles = { name: role for name, role, _ in rows }
+    return project_name, roles
+
+# ———————————————
+# 4) Convo history DB (we keep our own)
+# ———————————————
+def init_convo_db():
+    conn = sqlite3.connect(CONVO_DB_PATH)
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS convo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            ts DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def add_convo(role: str, content: str):
+    conn = sqlite3.connect(CONVO_DB_PATH)
+    c = conn.cursor()
+    c.execute("INSERT INTO convo (role, content) VALUES (?, ?)", (role, content))
+    conn.commit()
+    conn.close()
+
+def load_convo():
+    conn = sqlite3.connect(CONVO_DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT role, content FROM convo ORDER BY id")
+    msgs = [{"role": row[0], "content": row[1]} for row in c.fetchall()]
+    conn.close()
+    return msgs
+
+# ———————————————
+# 5) Chat helper
+# ———————————————
+def chat_with_context(user_text: str) -> str:
+    project_name, roles_dict = load_project_and_roles()
+    # turn the dict into a simple "Name: Role, ..." string
+    roles_str = ", ".join(f"{n}: {r}" for n, r in roles_dict.items())
+
+    system_msg = {
+        "role": "system",
+        "content": (
+            f"You are a project assistant for '{project_name}'.\n"
+            f"Team members & roles: {roles_str}\n\n"
+            "When asked for creative ideas, also propose a task repartition "
+            "based on roles. Remember the entire conversation."
+        )
+    }
+
+    history = load_convo()
+    history.append({"role": "user", "content": user_text})
+    add_convo("user", user_text)
+
     resp = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a creative assistant that proposes different ideas based on user input."
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Given the following text, propose {n_ideas} different creative ideas:\n\n"
-                    f"{prompt_text}"
-                )
-            }
-        ],
-        max_tokens=300,
+        messages=[system_msg] + history,
+        max_tokens=500,
         temperature=0.8
     )
-    # Extract and return the assistant’s reply text
-    return resp.choices[0].message.content.strip()
 
+    assistant_text = resp.choices[0].message.content.strip()
+    add_convo("assistant", assistant_text)
+    return assistant_text
 
+# ———————————————
+# 6) Main loop
+# ———————————————
 if __name__ == "__main__":
-    user_text = input("Describe your problem: ")
-    ideas = get_ideas_from_text(user_text)
-    print("\n=== Creative Ideas ===\n")
-    print(ideas)
+    init_convo_db()
+
+    print("🚀 Describe your next task, or type 'exit' to quit.")
+    while True:
+        user_text = input("\nMessage: ").strip()
+        if user_text.lower() in ("exit", "quit"):
+            print("👋 Goodbye!")
+            break
+
+        try:
+            reply = chat_with_context(user_text)
+            print("\n🤖 Assistant:\n")
+            print(reply)
+        except Exception as e:
+            print("❌ Error:", e)
+            break
