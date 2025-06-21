@@ -1,13 +1,13 @@
-import React from 'react';
+
 import { 
   Home, 
   FolderOpen, 
   CheckSquare, 
   BarChart3, 
   Users, 
-  Calendar,
   FileText,
-  MessageCircle
+  MessageCircle,
+  Book
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +23,7 @@ export default function Sidebar({ activeTab, onTabChange, userRole }: SidebarPro
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'chat', label: 'Team Chat', icon: MessageCircle },
+    { id: 'resources', label: 'Resources', icon: Book },
   ];
 
   const mentorTabs = [
