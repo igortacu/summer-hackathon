@@ -23,7 +23,9 @@ def chatbot():
     Placeholder for chatbot integration.
     This route can be used to handle chatbot requests.
     """
-    data = request.json
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": "error", "message": "Invalid JSON payload"}), 400
 
     message = data.get("message", "")
     if not message:

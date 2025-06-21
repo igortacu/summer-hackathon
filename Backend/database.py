@@ -1,15 +1,41 @@
 import sqlite3
 
+
+class User:
+    def __init__(
+        self,
+        name,
+        academic_group,
+        pbl_group_number,
+        email,
+        role,
+        password,
+        project_name,
+    ):
+        self.name = name
+        self.academic_group = academic_group
+        self.pbl_group_number = pbl_group_number
+        self.email = email
+        self.role = role
+        self.password = password
+        self.project_name = project_name
+
+    def __iter__(self):
+        for key in self.__dict__:
+            yield key, getattr(self, key)
+
+
 # 1. Connect to the existing database (or create it if missing)
-conn = sqlite3.connect('my_database.db')
+conn = sqlite3.connect("my_database.db")
 cursor = conn.cursor()
 
 # 2. (Development only) Drop the old users table if it exists
 #    Comment out the next line if you want to preserve existing data.
-cursor.execute('DROP TABLE IF EXISTS users')
+cursor.execute("DROP TABLE IF EXISTS users")
 
 # 3. Create the users table with the correct schema, including github_url
-cursor.execute('''
+cursor.execute(
+    """
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
@@ -21,25 +47,28 @@ cursor.execute('''
         "Project name" TEXT NOT NULL,
         github_url TEXT          -- new column for GitHub URL
     )
-''')
+"""
+)
 conn.commit()
 
+
 # 4. sign_in remains unchanged
-def sign_in(name, academic_group, pbl_group_number, email, role, password, project_name):
+def sign_in(user: User):
     # Check if a user with the same email already exists
-    cursor.execute("SELECT 1 FROM users WHERE email = ?", (email,))
+    cursor.execute("SELECT 1 FROM users WHERE email = ?", (user.email,))
     if cursor.fetchone():
-        print(f"User with email '{email}' already exists.")
+        print(f"User with email '{user.email}' already exists.")
         return
 
     # Check if that role is already taken
-    cursor.execute("SELECT 1 FROM users WHERE role = ?", (role,))
+    cursor.execute("SELECT 1 FROM users WHERE role = ?", (user.role,))
     if cursor.fetchone():
-        print(f"The role '{role}' is already taken. Please select another role.")
+        print(f"The role '{user.role}' is already taken. Please select another role.")
         return
 
     # Insert the new user (github_url will default to NULL)
-    cursor.execute('''
+    cursor.execute(
+        """
         INSERT INTO users (
             name,
             "Academic group",
@@ -49,9 +78,20 @@ def sign_in(name, academic_group, pbl_group_number, email, role, password, proje
             password,
             "Project name"
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (name, academic_group, pbl_group_number, email, role, password, project_name))
+    """,
+        (
+            user.name,
+            user.academic_group,
+            pbl_group_number,
+            user.email,
+            user.role,
+            user.password,
+            user.project_name,
+        ),
+    )
     conn.commit()
-    print(f"User '{name}' signed in and added to database.")
+    print(f"User '{user.name}' signed in and added to database.")
+
 
 # 5. New helper: fetch all GitHub URLs for a given PBL group number
 def get_github_urls_by_pbl_group(pbl_group_number):
@@ -60,13 +100,14 @@ def get_github_urls_by_pbl_group(pbl_group_number):
     """
     cursor.execute(
         'SELECT github_url FROM users WHERE "PBL group number" = ? AND github_url IS NOT NULL',
-        (pbl_group_number,)
+        (pbl_group_number,),
     )
     return [row[0] for row in cursor.fetchall()]
 
+
 # 6. Example usage: fetch GitHub links for your existing PBL group
 if __name__ == "main":
-   
+
     pbl_group_number = input("Enter the PBL group number: ")
     links = get_github_urls_by_pbl_group(pbl_group_number)
     print(f"GitHub URLs for PBL group {pbl_group_number}: {links}")
