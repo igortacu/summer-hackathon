@@ -17,9 +17,11 @@ import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import ChatList from './components/Student/ChatList';
 import Chat from './components/Student/Chat';
+import LandingPage from './components/Layout/LandingPage';
 
 type AppState = 
   | 'auth' 
+  | 'landing'
   | 'role-selection' 
   | 'project-setup' 
   | 'problem-definition' 
@@ -32,15 +34,31 @@ interface User {
 }
 
 function App() {
-  const [appState, setAppState] = useState<AppState>('auth');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [user, setUser] = useState<User | null>(null);
+  const [appState, setAppState] = useState<AppState>('landing');
   const [projectData, setProjectData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [selectedChat, setSelectedChat] = useState<any>(null);
+
+  // 1️⃣ If we’re at “landing”, show our fancy landing page
+  if (appState === 'landing') {
+    return (
+      <LandingPage
+        onLogin={() => {
+          setAuthMode('login');
+          setAppState('auth');
+        }}
+        onSignup={() => {
+          setAuthMode('signup');
+          setAppState('auth');
+        }}
+      />
+    );
+  }
 
   // Mock data for mentor chats
   const mockChatGroups = [
