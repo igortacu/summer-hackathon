@@ -1,10 +1,10 @@
+# /Backend/app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import gitFetcher
-from database import User, sign_in  # Import the User class and sign_in function
-import bublikchat
-
+from database import User, sign_in
+import bublikchat # This now imports our clean module
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -15,35 +15,35 @@ CORS(app)
 # Load configuration
 app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", True)
 
-# TODO: CHATBOT INTEGRATION
 
+# --- CHATBOT ROUTE (MODIFIED) ---
+# This is the only section we are changing.
 @app.route("/chatbot", methods=["POST"])
-def chatbot():
+def chatbot_route():
     """
-    Placeholder for chatbot integration.
-    This route can be used to handle chatbot requests.
+    Handles chatbot requests from the frontend, gets a real response,
+    and returns it.
     """
     data = request.get_json()
-    if not data:
-        return jsonify({"status": "error", "message": "Invalid JSON payload"}), 400
+    # Check for valid request body
+    if not data or "message" not in data:
+        return jsonify({"status": "error", "message": "Invalid request: no message provided"}), 400
 
-    message = data.get("message", "")
-    if not message:
-        return jsonify({"status": "error", "message": "No message provided"}), 400
-    else:
-        bublikchat.chat_with_context(message)
+    user_message = data["message"]
 
-    return jsonify({"status": "success", "message": "Chatbot integration not implemented yet."})
+    # 1. Call the get_answer function from our bublikchat module
+    ai_response = bublikchat.get_answer(user_message)
+
+    # 2. Return the AI's actual response to the frontend
+    # The frontend will look for the "answer" key in this JSON.
+    return jsonify({"answer": ai_response})
 
 
-# Routes
-
+# --- YOUR OTHER ROUTES (Unchanged) ---
 @app.route("/git/<group_number>", methods=["GET"])
 def get_git_data(group_number: int):
     return jsonify(results=gitFetcher.get_git_data_from_path(group_number))
 
-
-# Put for only method of post and get the form data
 @app.route("/register", methods=["POST"])
 def register():
     """
@@ -51,8 +51,6 @@ def register():
     register a user to the database
     """
     data = request.form
-
-    # Create a User object from the form data
     try:
         user = User(
             name=data.get("name"),
@@ -64,7 +62,6 @@ def register():
             project_name=data.get("project_name"),
         )
 
-        # Register the user with the database
         success = sign_in(user)
 
         if success:
@@ -92,5 +89,5 @@ def register():
 if __name__ == "__main__":
     port = 5500
     bublikchat.init_convo_db()
-
+    print(f"🚀 Flask server starting on http://localhost:{port}")
     app.run(host="0.0.0.0", port=port)
