@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import AuthForm from './components/Auth/AuthForm';
 import RoleSelection from './components/Auth/RoleSelection';
 import ProjectSetup from './components/Student/ProjectSetup';
@@ -8,7 +8,7 @@ import Dashboard from './components/Student/Dashboard';
 import MyProjects from './components/Student/MyProjects';
 import MyTasks from './components/Student/MyTasks';
 import Statistics from './components/Student/Statistics';
-import Calendar from './components/Student/Calendar';
+import Resources from './components/Student/Resources'; // CORRECTED: Import Resources component
 import MentorDashboard from './components/Mentor/MentorDashboard';
 import MyGroups from './components/Mentor/MyGroups';
 import CodeReview from './components/Mentor/CodeReview';
@@ -19,7 +19,6 @@ import Sidebar from './components/Layout/Sidebar';
 import ChatList from './components/Student/ChatList';
 import Chat from './components/Student/Chat';
 import LandingPage from './components/Layout/LandingPage';
-// MODIFICATION: Import the AIAssistant component
 import AIAssistant from './components/Student/AIAssistant';
 
 // Re-declare the same Task interface MyTasks expects
@@ -261,7 +260,7 @@ export default function App() {
                   />
                 )}
                 {activeTab === 'stats' && <Statistics />}
-                {activeTab === 'calendar' && <Calendar />}
+                {activeTab === 'resources' && <Resources />} {/* NEW: Render Resources component */}
                 {activeTab === 'chat' && (
                   <ChatList
                     groups={[studentGroup]}
@@ -298,8 +297,8 @@ export default function App() {
           userRole={user.role}
         />
 
-        {/* MODIFICATION: Conditionally render the AI Assistant only on the dashboard tab */}
-        {activeTab === 'dashboard' && <AIAssistant />}
+        {/* Conditionally render the AI Assistant only on the dashboard tab for students */}
+        {user.role === 'student' && activeTab === 'dashboard' && <AIAssistant />}
       </div>
     );
   }
