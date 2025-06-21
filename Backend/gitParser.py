@@ -27,7 +27,7 @@ import subprocess
 # ...
 # <number of files changed> files changed, <insertions> insertions(+), <deletions> deletions(-)
 """
-
+# TODO: Add the last line to the parsing
 
 def get_commits(out: str) -> dict[str, list[str]]:
 
@@ -64,6 +64,7 @@ def parse_commit(commits: dict[str, list[str]]) -> list[dict[str, any]]:
         o["author"] = " ".join(author_line[1:-1]).strip()
         o["email"] = author_line[-1].strip().replace("<", "").replace(">", "")
         o["date"] = " ".join(date_line[1:])
+        o["footer"] = lines[-1].strip()
         out.append(o)
     return out
 
