@@ -3,7 +3,7 @@ import sqlite3
 from typing import List, Dict
 from dotenv import load_dotenv
 from openai import OpenAI
-from fastapi import FastAPI, HTTPException
+# from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 # Load environment variables and instantiate client
@@ -16,22 +16,21 @@ client = OpenAI(api_key=api_key)
 # Path to your existing user database
 db_path = "my_database.db"
 
-# --- Data models for API ---
-class ProblemRequest(BaseModel):
-    problem: str
-    n_ideas: int = 5
+# # --- Data models for API ---
+# class ProblemRequest(BaseModel):
+#     problem: str
+#     n_ideas: int = 5
 
-class IdeaSelection(BaseModel):
-    idea: str
+# class IdeaSelection(BaseModel):
+#     idea: str
 
-class IdeasResponse(BaseModel):
-    ideas: List[str]
 
-class TasksResponse(BaseModel):
-    distribution: str
 
-class ResourcesResponse(BaseModel):
-    resources: str
+# class TasksResponse(BaseModel):
+#     distribution: str
+
+# class ResourcesResponse(BaseModel):
+#     resources: str
 
 # --- Helper functions ---
 def load_roles() -> Dict[str, str]:
@@ -107,28 +106,28 @@ def recommend_resources(idea: str) -> str:
     return ask_openai(system_prompt, user_prompt, max_tokens=400)
 
 # --- FastAPI setup ---
-app = FastAPI()
+# app = FastAPI()
 
-@app.post("/ideas", response_model=IdeasResponse)
-async def get_ideas(req: ProblemRequest):
-    try:
-        ideas = propose_ideas(req.problem, req.n_ideas)
-        return IdeasResponse(ideas=ideas)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/ideas")
+# async def get_ideas(req: ProblemRequest):
+#     try:
+#         ideas = propose_ideas(req.problem, req.n_ideas)
+#         return IdeasResponse(ideas=ideas)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tasks", response_model=TasksResponse)
-async def get_tasks(sel: IdeaSelection):
-    try:
-        dist = distribute_tasks(sel.idea)
-        return TasksResponse(distribution=dist)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/tasks", response_model=TasksResponse)
+# async def get_tasks(sel: IdeaSelection):
+#     try:
+#         dist = distribute_tasks(sel.idea)
+#         return TasksResponse(distribution=dist)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/resources", response_model=ResourcesResponse)
-async def get_resources(sel: IdeaSelection):
-    try:
-        res = recommend_resources(sel.idea)
-        return ResourcesResponse(resources=res)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/resources", response_model=ResourcesResponse)
+# async def get_resources(sel: IdeaSelection):
+#     try:
+#         res = recommend_resources(sel.idea)
+#         return ResourcesResponse(resources=res)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))

@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import gitFetcher
-from database import User, sign_in  # Import the User class and sign_in function
+from gitFetcher import get_git_data_from_path
+from database import User, sign_in  
 import bublikchat
-
+import bublikproblem
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -37,10 +37,34 @@ def chatbot():
 
 
 # Routes
+@app.route("/api/ideas", methods=["POST"])
+def get_ideas():
+    """
+    {"problem": "Describe your problem here"}
+    """
+    data = request.get_json()
+    ideas = bublikproblem.propose_ideas(data["problem"])
+    return jsonify({"ideas": ideas})
+
+@app.route("/api/tasks", methods=["POST"])
+def get_tasks():
+    """
+    {"idea": "Describe your idea here"}
+    """
+    data = request.get_json()
+    tasks = bublikproblem.distribute_tasks(data["idea"])
+    return jsonify({"tasks": tasks})
+
+@app.route("/api/resources", methods=["POST"]) 
+#! Not sure if we will use it 
+def get_resources():
+    data = request.get_json()
+    resources = bublikproblem.get_resources(data["idea"])
+    return jsonify({"resources": resources})
 
 @app.route("/git/<group_number>", methods=["GET"])
 def get_git_data(group_number: int):
-    return jsonify(results=gitFetcher.get_git_data_from_path(group_number))
+    return jsonify(results=get_git_data_from_path(group_number))
 
 
 # Put for only method of post and get the form data
