@@ -61,13 +61,16 @@ def main():
     except ValueError:
         choice_idx = -1
 
-    if 1 <= choice_idx <= 5:
+    if 1 <= choice_idx <= 5 and ideas_text:
         # Extract the chosen idea line
-        selected_idea = ideas_text.splitlines()[choice_idx - 1]
-        print(f"\nYou selected: {selected_idea}")
+        lines = [line for line in ideas_text.splitlines() if line.strip()]
+        if len(lines) >= choice_idx:
+            selected_idea = lines[choice_idx - 1]
+        else:
+            selected_idea = input("\nCouldn't parse selection. Enter your custom idea: ").strip()
     else:
         selected_idea = input("\nEnter your custom idea: ").strip()
-        print(f"\nYou entered: {selected_idea}")
+    print(f"\nSelected idea: {selected_idea}")
 
     # Step 3: Ask AI for task distribution based on roles
     sys_prompt2 = (
@@ -78,6 +81,16 @@ def main():
     tasks_text = ask_openai(sys_prompt2, user_prompt2, max_tokens=400)
     print("\n=== Task Distribution Suggestions ===")
     print(tasks_text)
+
+    # Step 4: Ask AI for literature and resources
+    sys_prompt3 = (
+        "You are an assistant that recommends resources. "
+        "Based on the chosen solution idea, propose literature and resources with active links to the websites to help implement it."
+    )
+    user_prompt3 = f"Solution idea: {selected_idea}\n\nPropose literature and resources:"
+    resources_text = ask_openai(sys_prompt3, user_prompt3, max_tokens=400)
+    print("\n=== Literature & Resources ===")
+    print(resources_text)
 
 if __name__ == "__main__":
     main()
