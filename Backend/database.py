@@ -56,16 +56,7 @@ def sign_in(name, academic_group, pbl_group_number, email, role, password, proje
 
 # 4. Example usage
 if __name__ == "__main__":
-    # Replace with your own test data or call this function dynamically
-    sign_in(
-        'Ina Pancenco',
-        'FAF-242',
-        '1',
-        'ina.pancenco@isa.utm.md',
-        'Backend Developer',
-        '12345678',
-        'Earthquake'
-    )
+    sign_in() 
 
     # Close the connection when done
     conn.close()
