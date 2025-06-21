@@ -1,5 +1,7 @@
+// src/components/Student/Chat.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Smile, X, Users, MessageCircle } from 'lucide-react';
+import { parseEmailName } from '../../utils/parseEmailName';
 
 interface Message {
   id: string;
@@ -13,78 +15,83 @@ interface ChatProps {
   isOpen: boolean;
   onClose: () => void;
   chatTitle: string;
-  participants: string[];
+  participants: string[];   // emails
   userRole: 'student' | 'mentor';
 }
 
-export default function Chat({ isOpen, onClose, chatTitle, participants, userRole }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'John Doe',
-      content: 'Hey everyone! How are we doing with the project?',
-      timestamp: new Date(Date.now() - 3600000),
-      type: 'text'
-    },
-    {
-      id: '2',
-      sender: 'Jane Smith',
-      content: 'I just finished the wireframes. Will share them shortly!',
-      timestamp: new Date(Date.now() - 1800000),
-      type: 'text'
-    },
-    {
-      id: '3',
-      sender: 'Mike Johnson',
-      content: 'Great work everyone! The backend API is almost ready.',
-      timestamp: new Date(Date.now() - 900000),
-      type: 'text'
-    }
-  ]);
-
+export default function Chat({
+  isOpen,
+  onClose,
+  chatTitle,
+  participants,
+  userRole
+}: ChatProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Seed initial messages on open
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (isOpen && messages.length === 0) {
+      const seeded: Message[] = [];
+      if (participants[0]) {
+        seeded.push({
+          id: '1',
+          sender: parseEmailName(participants[0]),
+          content: 'Hey everyone! How are we doing with the project?',
+          timestamp: new Date(Date.now() - 3600000),
+          type: 'text'
+        });
+      }
+      if (participants[1]) {
+        seeded.push({
+          id: '2',
+          sender: parseEmailName(participants[1]),
+          content: 'I just wrapped up my tasks—will push my branch shortly.',
+          timestamp: new Date(Date.now() - 1800000),
+          type: 'text'
+        });
+      }
+      seeded.push({
+        id: '3',
+        sender: 'You',
+        content: 'Great work! Let me know when it’s live.',
+        timestamp: new Date(Date.now() - 900000),
+        type: 'text'
+      });
+      setMessages(seeded);
+    }
+  }, [isOpen, participants, messages.length]);
 
+  // Auto-scroll
+  const scrollToBottom = () =>
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(scrollToBottom, [messages]);
+
+  // Send new
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-
-    const message: Message = {
+    const msg: Message = {
       id: Date.now().toString(),
       sender: 'You',
       content: newMessage,
       timestamp: new Date(),
       type: 'text'
     };
-
-    setMessages(prev => [...prev, message]);
+    setMessages(prev => [...prev, msg]);
     setNewMessage('');
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const formatDate = (date: Date) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString();
-    }
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString();
   };
 
   if (!isOpen) return null;
@@ -117,12 +124,12 @@ export default function Chat({ isOpen, onClose, chatTitle, participants, userRol
         {/* Participants */}
         <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
           <div className="flex flex-wrap gap-2">
-            {participants.map((participant, index) => (
+            {participants.map((email, i) => (
               <span
-                key={index}
+                key={i}
                 className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
               >
-                {participant}
+                {parseEmailName(email)}
               </span>
             ))}
           </div>
@@ -130,10 +137,11 @@ export default function Chat({ isOpen, onClose, chatTitle, participants, userRol
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message, index) => {
-            const showDate = index === 0 || 
-              formatDate(message.timestamp) !== formatDate(messages[index - 1].timestamp);
-            
+          {messages.map((message, idx) => {
+            const showDate =
+              idx === 0 ||
+              formatDate(message.timestamp) !==
+                formatDate(messages[idx - 1].timestamp);
             return (
               <div key={message.id}>
                 {showDate && (
@@ -143,20 +151,33 @@ export default function Chat({ isOpen, onClose, chatTitle, participants, userRol
                     </span>
                   </div>
                 )}
-                
-                <div className={`flex ${message.sender === 'You' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs lg:max-w-md ${
-                    message.sender === 'You' 
-                      ? 'bg-primary-600 text-white' 
-                      : 'bg-gray-100 text-gray-900'
-                  } rounded-lg px-4 py-2`}>
+                <div
+                  className={`flex ${
+                    message.sender === 'You'
+                      ? 'justify-end'
+                      : 'justify-start'
+                  }`}
+                >
+                  <div
+                    className={`max-w-xs lg:max-w-md ${
+                      message.sender === 'You'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-900'
+                    } rounded-lg px-4 py-2`}
+                  >
                     {message.sender !== 'You' && (
-                      <p className="text-xs font-medium text-gray-600 mb-1">{message.sender}</p>
+                      <p className="text-xs font-medium text-gray-600 mb-1">
+                        {message.sender}
+                      </p>
                     )}
                     <p className="text-sm">{message.content}</p>
-                    <p className={`text-xs mt-1 ${
-                      message.sender === 'You' ? 'text-primary-200' : 'text-gray-500'
-                    }`}>
+                    <p
+                      className={`text-xs mt-1 ${
+                        message.sender === 'You'
+                          ? 'text-primary-200'
+                          : 'text-gray-500'
+                      }`}
+                    >
                       {formatTime(message.timestamp)}
                     </p>
                   </div>
@@ -167,9 +188,12 @@ export default function Chat({ isOpen, onClose, chatTitle, participants, userRol
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Message Input */}
+        {/* Input */}
         <div className="p-4 border-t border-gray-200">
-          <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+          <form
+            onSubmit={handleSendMessage}
+            className="flex items-center space-x-2"
+          >
             <button
               type="button"
               className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -185,7 +209,7 @@ export default function Chat({ isOpen, onClose, chatTitle, participants, userRol
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={e => setNewMessage(e.target.value)}
               placeholder="Type your message..."
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />

@@ -1,9 +1,12 @@
 import os
 import sqlite3
+from typing import List, Dict
 from dotenv import load_dotenv
 from openai import OpenAI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
-# Load environment variables and instantiate OpenAI client
+# Load environment variables and instantiate client
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
@@ -13,8 +16,29 @@ client = OpenAI(api_key=api_key)
 # Path to your existing user database
 db_path = "my_database.db"
 
-# Helper to load team roles from the database
-def load_roles():
+# --- Data models for API ---
+class ProblemRequest(BaseModel):
+    problem: str
+    n_ideas: int = 5
+
+class IdeaSelection(BaseModel):
+    idea: str
+
+class IdeasResponse(BaseModel):
+    ideas: List[str]
+
+class TasksResponse(BaseModel):
+    distribution: str
+
+class ResourcesResponse(BaseModel):
+    resources: str
+
+# --- Helper functions ---
+def load_roles() -> Dict[str, str]:
+    """
+    Load team roles from the users table.
+    Returns a dict mapping user name to role.
+    """
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT name, role FROM users')
@@ -22,8 +46,11 @@ def load_roles():
     conn.close()
     return {name: role for name, role in rows}
 
-# Function to query OpenAI ChatCompletion
-def ask_openai(system_prompt, user_prompt, max_tokens=300):
+
+def ask_openai(system_prompt: str, user_prompt: str, max_tokens: int = 300) -> str:
+    """
+    Send a chat completion request to OpenAI and return the text response.
+    """
     resp = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -35,62 +62,73 @@ def ask_openai(system_prompt, user_prompt, max_tokens=300):
     )
     return resp.choices[0].message.content.strip()
 
-# Main interaction loop
-def main():
+# --- Core logic functions ---
+def propose_ideas(problem: str, n_ideas: int = 5) -> List[str]:
+    """
+    Generate solution ideas for a given problem.
+    """
+    system_prompt = (
+        f"You are a creative assistant. Given a short problem description, propose {n_ideas} different digital solution ideas."
+    )
+    user_prompt = f"Problem: {problem}\n\nPropose {n_ideas} solution ideas numbered 1 to {n_ideas}."
+    raw = ask_openai(system_prompt, user_prompt)
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+    ideas = []
+    for line in lines:
+        parts = line.split('.', 1)
+        if len(parts) == 2 and parts[0].isdigit():
+            ideas.append(parts[1].strip())
+        else:
+            ideas.append(line)
+    return ideas
+
+
+def distribute_tasks(idea: str) -> str:
+    """
+    Generate task distribution based on roles for a chosen idea.
+    """
     roles = load_roles()
     roles_str = ", ".join(f"{n}: {r}" for n, r in roles.items())
-    print("Welcome! Describe your problem, and I'll propose some solution ideas.")
-
-    # Step 1: User describes problem
-    problem = input("\nDescribe your problem: ").strip()
-
-    # Step 2: Ask AI for solution ideas
-    sys_prompt1 = (
-        "You are a creative assistant. "
-        "Given a short problem description, propose 5 different digital solution ideas."
+    system_prompt = (
+        f"You are a project manager assistant for a team with roles: {roles_str}."
     )
-    user_prompt1 = f"Problem: {problem}\n\nPropose 5 solution ideas numbered 1 to 5."
-    ideas_text = ask_openai(sys_prompt1, user_prompt1)
-    print("\nHere are 5 ideas:")
-    print(ideas_text)
+    user_prompt = f"Solution idea: {idea}\n\nPropose task distribution among the team members based on their roles."
+    return ask_openai(system_prompt, user_prompt, max_tokens=400)
 
-    # Ask user to select or skip
-    choice = input("\nSelect an idea (1-5) or 0 to enter your own idea: ").strip()
+
+def recommend_resources(idea: str) -> str:
+    """
+    Recommend literature and resources for a chosen idea.
+    """
+    system_prompt = (
+        "You are an assistant that recommends resources. Based on the chosen solution idea, propose literature and resources with active links to help implement it."
+    )
+    user_prompt = f"Solution idea: {idea}\n\nPropose literature and resources:"
+    return ask_openai(system_prompt, user_prompt, max_tokens=400)
+
+# --- FastAPI setup ---
+app = FastAPI()
+
+@app.post("/ideas", response_model=IdeasResponse)
+async def get_ideas(req: ProblemRequest):
     try:
-        choice_idx = int(choice)
-    except ValueError:
-        choice_idx = -1
+        ideas = propose_ideas(req.problem, req.n_ideas)
+        return IdeasResponse(ideas=ideas)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    if 1 <= choice_idx <= 5 and ideas_text:
-        # Extract the chosen idea line
-        lines = [line for line in ideas_text.splitlines() if line.strip()]
-        if len(lines) >= choice_idx:
-            selected_idea = lines[choice_idx - 1]
-        else:
-            selected_idea = input("\nCouldn't parse selection. Enter your custom idea: ").strip()
-    else:
-        selected_idea = input("\nEnter your custom idea: ").strip()
-    print(f"\nSelected idea: {selected_idea}")
+@app.post("/tasks", response_model=TasksResponse)
+async def get_tasks(sel: IdeaSelection):
+    try:
+        dist = distribute_tasks(sel.idea)
+        return TasksResponse(distribution=dist)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Step 3: Ask AI for task distribution based on roles
-    sys_prompt2 = (
-        f"You are a project manager assistant for a team with roles: {roles_str}. "
-        "Given the chosen solution idea, propose a task distribution among the team members based on their roles."
-    )
-    user_prompt2 = f"Solution idea: {selected_idea}\n\nPropose task distribution:"
-    tasks_text = ask_openai(sys_prompt2, user_prompt2, max_tokens=400)
-    print("\n=== Task Distribution Suggestions ===")
-    print(tasks_text)
-
-    # Step 4: Ask AI for literature and resources
-    sys_prompt3 = (
-        "You are an assistant that recommends resources. "
-        "Based on the chosen solution idea, propose literature and resources with active links to the websites to help implement it."
-    )
-    user_prompt3 = f"Solution idea: {selected_idea}\n\nPropose literature and resources:"
-    resources_text = ask_openai(sys_prompt3, user_prompt3, max_tokens=400)
-    print("\n=== Literature & Resources ===")
-    print(resources_text)
-
-if __name__ == "__main__":
-    main()
+@app.post("/resources", response_model=ResourcesResponse)
+async def get_resources(sel: IdeaSelection):
+    try:
+        res = recommend_resources(sel.idea)
+        return ResourcesResponse(resources=res)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
