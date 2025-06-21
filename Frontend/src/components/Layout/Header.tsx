@@ -1,4 +1,5 @@
-import React from 'react';
+import React from 'react'
+import logo from '../../assets/logo.png'
 import { Bell, User, LogOut, Settings } from 'lucide-react';
 
 interface HeaderProps {
@@ -19,10 +20,12 @@ export default function Header({ user, notifications, onLogout }: HeaderProps) {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-                aici pui logo
-              </h1>
-            </div>
+            <img
+  src={logo}
+  alt="Bublink"
+  className="h-12 md:h-16 lg:h-20 w-auto"
+/>
+</div>
           </div>
 
           {/* Right side */}
