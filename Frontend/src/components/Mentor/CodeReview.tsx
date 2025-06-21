@@ -1,390 +1,194 @@
-import React, { useState } from 'react';
-import { GitBranch, GitCommit, GitPullRequest, FileText, Eye, MessageSquare, CheckCircle, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  GitBranch, GitCommit, GitPullRequest, FileText, MessageSquare, CheckCircle, Clock, PlusCircle, MinusCircle, ArrowRight,
+  XCircle
+} from 'lucide-react';
+
+// --- TYPESCRIPT TYPES ---
+type ChangedFile = { path: string; additions: number; deletions: number };
+type Commit = {
+  id: string;
+  repoId: string;
+  hash: string;
+  message: string;
+  author: string;
+  date: string;
+  changedFiles: ChangedFile[];
+};
+type PullRequest = {
+  id: number;
+  repoId: string;
+  title: string;
+  author: string;
+  status: string;
+  branch: string;
+};
+type Comment = {
+  id: number;
+  commitId: string;
+  author: string;
+  text: string;
+};
+
 
 export default function CodeReview() {
+  // --- STATE MANAGEMENT ---
   const [selectedRepo, setSelectedRepo] = useState('studybuddy-app');
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [activeCommit, setActiveCommit] = useState<Commit | null>(null);
+  const [selectedFile, setSelectedFile] = useState<ChangedFile | null>(null);
+  const [activePullRequest, setActivePullRequest] = useState<PullRequest | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState('');
 
-  // Mock data for repositories and commits
+  // --- MOCK DATA ---
   const repositories = [
     { id: 'studybuddy-app', name: 'StudyBuddy Mobile App', group: 'StudyBuddy Team' },
     { id: 'ecotracker-web', name: 'EcoTracker Web Platform', group: 'EcoTracker Team' },
-    { id: 'campus-navigator', name: 'Campus Navigator AR', group: 'Navigator Team' }
+    // NEW: Added a repository with no associated data to test empty states
+    { id: 'empty-project', name: 'Empty Project', group: 'Test Group' }
+  ];
+  
+  const commits: Commit[] = [
+    { id: '1', repoId: 'studybuddy-app', hash: 'a1b2c3d', message: 'Implement user authentication system', author: 'John Doe', date: 'June 21, 2025', changedFiles: [{ path: 'src/components/LoginForm.tsx', additions: 88, deletions: 5 }, { path: 'src/services/auth.ts', additions: 32, deletions: 10 }] },
+    { id: '2', repoId: 'studybuddy-app', hash: 'e4f5g6h', message: 'Add responsive navigation component', author: 'Jane Smith', date: 'June 20, 2025', changedFiles: [{ path: 'src/components/Navbar.tsx', additions: 45, deletions: 12 }] },
+    { id: '3', repoId: 'ecotracker-web', hash: 'c9d8e7f', message: 'Integrate mapping API for location tracking', author: 'Emily White', date: 'June 19, 2025', changedFiles: [{ path: 'src/components/Map.tsx', additions: 150, deletions: 20 }] }
+  ];
+  
+  const pullRequests: PullRequest[] = [
+    { id: 1, repoId: 'studybuddy-app', title: 'Feature: User Authentication', author: 'John Doe', status: 'open', branch: 'feature/auth' },
+    { id: 2, repoId: 'studybuddy-app', title: 'Feature: Add responsive navigation', author: 'Jane Smith', status: 'merged', branch: 'feature/navigation' },
+    { id: 3, repoId: 'ecotracker-web', title: 'Feature: Location Tracking Map', author: 'Emily White', status: 'open', branch: 'feature/maps' },
   ];
 
-  const commits = [
-    {
-      id: '1',
-      hash: 'a1b2c3d',
-      message: 'Implement user authentication system',
-      author: 'John Doe',
-      date: '2024-12-14 10:30',
-      branch: 'feature/auth',
-      status: 'pending',
-      filesChanged: 5,
-      additions: 120,
-      deletions: 15
-    },
-    {
-      id: '2',
-      hash: 'e4f5g6h',
-      message: 'Add responsive navigation component',
-      author: 'Jane Smith',
-      date: '2024-12-14 09:15',
-      branch: 'feature/navigation',
-      status: 'approved',
-      filesChanged: 3,
-      additions: 85,
-      deletions: 8
-    },
-    {
-      id: '3',
-      hash: 'i7j8k9l',
-      message: 'Fix database connection issues',
-      author: 'Mike Johnson',
-      date: '2024-12-13 16:45',
-      branch: 'bugfix/db-connection',
-      status: 'changes-requested',
-      filesChanged: 2,
-      additions: 25,
-      deletions: 30
+  // --- COMPONENT LOGIC ---
+  useEffect(() => {
+    const commitsForRepo = commits.filter(c => c.repoId === selectedRepo);
+    const prsForRepo = pullRequests.filter(pr => pr.repoId === selectedRepo);
+
+    setActiveCommit(commitsForRepo[0] || null);
+    setSelectedFile(commitsForRepo[0]?.changedFiles[0] || null);
+    setActivePullRequest(prsForRepo[0] || null);
+  }, [selectedRepo]);
+
+  const filteredCommits = commits.filter(c => c.repoId === selectedRepo);
+  const filteredPullRequests = pullRequests.filter(pr => pr.repoId === selectedRepo);
+  const filteredComments = comments.filter(c => c.commitId === activeCommit?.id);
+
+  const handleAddComment = () => {
+    if (commentText.trim() && activeCommit) {
+      const newComment: Comment = {
+        id: Date.now(),
+        commitId: activeCommit.id,
+        author: 'You',
+        text: commentText.trim(),
+      };
+      setComments([...comments, newComment]);
+      setCommentText('');
     }
-  ];
+  };
 
-  const pullRequests = [
-    {
-      id: 1,
-      title: 'Feature: User Authentication System',
-      author: 'John Doe',
-      branch: 'feature/auth → main',
-      status: 'open',
-      commits: 3,
-      filesChanged: 8,
-      reviewers: ['mentor@example.com'],
-      createdAt: '2024-12-14'
-    },
-    {
-      id: 2,
-      title: 'Fix: Database Connection Pool',
-      author: 'Jane Smith',
-      branch: 'bugfix/db-pool → main',
-      status: 'merged',
-      commits: 2,
-      filesChanged: 4,
-      reviewers: ['mentor@example.com'],
-      createdAt: '2024-12-13'
-    }
-  ];
+  const AuthorAvatar: React.FC<{ name: string }> = ({ name }) => {
+    const initial = name ? name.charAt(0).toUpperCase() : '?';
+    return <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">{initial}</div>;
+  };
 
-  const fileStructure = [
-    { name: 'src/', type: 'folder', children: [
-      { name: 'components/', type: 'folder', children: [
-        { name: 'Auth/', type: 'folder', children: [
-          { name: 'LoginForm.tsx', type: 'file', status: 'modified' },
-          { name: 'SignupForm.tsx', type: 'file', status: 'added' }
-        ]},
-        { name: 'Navigation/', type: 'folder', children: [
-          { name: 'Navbar.tsx', type: 'file', status: 'modified' }
-        ]}
-      ]},
-      { name: 'utils/', type: 'folder', children: [
-        { name: 'auth.ts', type: 'file', status: 'modified' },
-        { name: 'api.ts', type: 'file', status: 'modified' }
-      ]}
-    ]},
-    { name: 'package.json', type: 'file', status: 'modified' }
-  ];
-
-  const codeExample = `// LoginForm.tsx - Recent changes
-import React, { useState } from 'react';
-import { validateEmail, hashPassword } from '../utils/auth';
-
-interface LoginFormProps {
-  onSubmit: (credentials: LoginCredentials) => void;
-}
-
-export default function LoginForm({ onSubmit }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<string[]>([]);
-
-+ // Added input validation
-+ const validateForm = () => {
-+   const newErrors: string[] = [];
-+   if (!validateEmail(email)) {
-+     newErrors.push('Invalid email format');
-+   }
-+   if (password.length < 8) {
-+     newErrors.push('Password must be at least 8 characters');
-+   }
-+   setErrors(newErrors);
-+   return newErrors.length === 0;
-+ };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-+   if (!validateForm()) return;
-    
-    onSubmit({
-      email,
--     password
-+     password: hashPassword(password)
-    });
+  const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+    const isMerged = status === 'merged', isClosed = status === 'closed', isOpen = status === 'open';
+    return (
+      <span className={ `px-2 py-1 text-xs font-medium rounded-full flex items-center ` + (isOpen ? 'bg-blue-100 text-blue-700 ' : '') + (isMerged ? 'bg-purple-100 text-purple-700 ' : '') + (isClosed ? 'bg-red-100 text-red-700 ' : '') }>
+        {isOpen && <Clock className="h-3 w-3 mr-1" />}
+        {isMerged && <CheckCircle className="h-3 w-3 mr-1" />}
+        {isClosed && <XCircle className="h-3 w-3 mr-1" />}
+        <span className="capitalize">{status}</span>
+      </span>
+    );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          className="w-full p-3 border rounded-lg"
-        />
-      </div>
-      <div>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-full p-3 border rounded-lg"
-        />
-      </div>
-+     {errors.length > 0 && (
-+       <div className="text-red-600 text-sm">
-+         {errors.map((error, index) => (
-+           <p key={index}>{error}</p>
-+         ))}
-+       </div>
-+     )}
-      <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg">
-        Login
-      </button>
-    </form>
-  );
-}`;
+    <div className="bg-gray-50 min-h-screen font-sans">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <header className="pb-8 border-b border-gray-200">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Code Review</h1>
+          <div className="mt-4">
+            <select id="repo-select" value={selectedRepo} onChange={(e) => setSelectedRepo(e.target.value)}
+              className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+            >
+              {repositories.map(repo => <option key={repo.id} value={repo.id}>{repo.name} ({repo.group})</option>)}
+            </select>
+          </div>
+        </header>
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-success-100 text-success-800';
-      case 'pending':
-        return 'bg-warning-100 text-warning-800';
-      case 'changes-requested':
-        return 'bg-error-100 text-error-800';
-      case 'merged':
-        return 'bg-primary-100 text-primary-800';
-      case 'open':
-        return 'bg-secondary-100 text-secondary-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Panel */}
+          <aside className="lg:col-span-4 xl:col-span-3 space-y-8">
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-base font-semibold text-gray-800 flex items-center mb-4"><GitCommit className="h-5 w-5 mr-2 text-gray-400" />Recent Commits</h3>
+              <div className="space-y-3">
+                {filteredCommits.length > 0 ? filteredCommits.map(commit => (
+                  <div key={commit.id} onClick={() => setActiveCommit(commit)}
+                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${activeCommit?.id === commit.id ? 'bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-gray-100'}`}>
+                    <div className="flex items-center mb-2"><AuthorAvatar name={commit.author} /><div className="ml-3"><p className="text-sm font-semibold text-gray-800">{commit.author}</p><p className="text-xs text-gray-500">{commit.date}</p></div></div>
+                    <p className="text-sm text-gray-700 leading-snug">{commit.message}</p>
+                  </div>
+                )) : <p className="text-sm text-gray-500">No commits found.</p>}
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-base font-semibold text-gray-800 flex items-center mb-4"><GitPullRequest className="h-5 w-5 mr-2 text-gray-400" />Pull Requests</h3>
+              <div className="space-y-2">
+                {filteredPullRequests.length > 0 ? filteredPullRequests.map(pr => (
+                  <div key={pr.id} onClick={() => setActivePullRequest(pr)}
+                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${activePullRequest?.id === pr.id ? 'bg-indigo-50 ring-1 ring-indigo-400' : 'hover:bg-gray-100'}`}>
+                    <div className="flex items-center justify-between"><p className="text-sm font-semibold text-gray-800">{pr.title}</p><StatusBadge status={pr.status}/></div>
+                    <div className="mt-2 flex items-center text-xs text-gray-500"><span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-md">{pr.branch}</span></div>
+                  </div>
+                )) : <p className="text-sm text-gray-500">No pull requests found.</p>}
+              </div>
+            </div>
+          </aside>
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-      case 'merged':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'pending':
-      case 'open':
-        return <Clock className="h-4 w-4" />;
-      default:
-        return <MessageSquare className="h-4 w-4" />;
-    }
-  };
+          {/* Right Panel */}
+          <main className="lg:col-span-8 xl:col-span-9 space-y-8">
+            {activeCommit ? (
+              <>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                  <div className="p-5 border-b border-gray-200"><h3 className="text-base font-semibold text-gray-800 flex items-center"><GitBranch className="h-5 w-5 mr-2 text-gray-400" />File Changes in <code className="ml-2 text-sm bg-gray-200 text-gray-700 px-2 py-1 rounded-md">{activeCommit?.hash}</code></h3></div>
+                  <div className="divide-y divide-gray-200">
+                    {activeCommit?.changedFiles.map((file, index) => (
+                      <div key={index} onClick={() => setSelectedFile(file)}
+                        className={`flex items-center justify-between p-4 cursor-pointer transition-colors duration-200 ${selectedFile?.path === file.path ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}>
+                        <div className="flex items-center min-w-0"><FileText className="h-5 w-5 mr-3 text-gray-400 flex-shrink-0"/><span className={`text-sm font-medium truncate ${selectedFile?.path === file.path ? 'text-indigo-700' : 'text-gray-800'}`}>{file.path}</span></div>
+                        <div className="flex items-center space-x-2 text-sm flex-shrink-0 ml-4"><span className="font-bold text-green-600 flex items-center"><PlusCircle className="h-4 w-4 mr-1"/>{file.additions}</span><span className="font-bold text-red-600 flex items-center"><MinusCircle className="h-4 w-4 mr-1"/>{file.deletions}</span></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-  const renderFileTree = (files: any[], level = 0) => {
-    return files.map((file, index) => (
-      <div key={index} style={{ marginLeft: `${level * 20}px` }}>
-        <div 
-          className={`flex items-center py-1 px-2 hover:bg-gray-100 rounded cursor-pointer ${
-            selectedFile === file.name ? 'bg-primary-50 text-primary-700' : ''
-          }`}
-          onClick={() => file.type === 'file' && setSelectedFile(file.name)}
-        >
-          {file.type === 'folder' ? (
-            <FileText className="h-4 w-4 mr-2 text-gray-400" />
-          ) : (
-            <FileText className="h-4 w-4 mr-2 text-gray-600" />
-          )}
-          <span className="text-sm">{file.name}</span>
-          {file.status && (
-            <span className={`ml-2 px-1 text-xs rounded ${
-              file.status === 'added' ? 'bg-success-100 text-success-800' :
-              file.status === 'modified' ? 'bg-warning-100 text-warning-800' :
-              'bg-error-100 text-error-800'
-            }`}>
-              {file.status}
-            </span>
-          )}
-        </div>
-        {file.children && renderFileTree(file.children, level + 1)}
-      </div>
-    ));
-  };
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Code Review</h1>
-        <p className="text-gray-600 mt-1">Review commits, pull requests, and code changes</p>
-      </div>
-
-      {/* Repository Selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Select Repository</label>
-        <select
-          value={selectedRepo}
-          onChange={(e) => setSelectedRepo(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-        >
-          {repositories.map(repo => (
-            <option key={repo.id} value={repo.id}>
-              {repo.name} ({repo.group})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Panel - Commits & PRs */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Recent Commits */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <GitCommit className="h-5 w-5 mr-2" />
-              Recent Commits
-            </h3>
-            <div className="space-y-3">
-              {commits.map(commit => (
-                <div key={commit.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center">
-                      <code className="text-xs bg-gray-100 px-2 py-1 rounded">{commit.hash}</code>
-                      <span className={`ml-2 px-2 py-1 text-xs rounded-full flex items-center ${getStatusColor(commit.status)}`}>
-                        {getStatusIcon(commit.status)}
-                        <span className="ml-1">{commit.status}</span>
-                      </span>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                  <div className="p-5 border-b border-gray-200"><h3 className="text-base font-semibold text-gray-800 flex items-center"><MessageSquare className="h-5 w-5 mr-2 text-gray-400" />Comments</h3></div>
+                  <div className="p-5 space-y-5">
+                    {filteredComments.map(comment => (
+                      <div key={comment.id} className="flex items-start">
+                        <AuthorAvatar name={comment.author} />
+                        <div className="ml-4"><p className="text-sm font-semibold">{comment.author}</p><p className="text-sm text-gray-700">{comment.text}</p></div>
+                      </div>
+                    ))}
+                    <div className="flex items-start pt-5 border-t border-gray-200">
+                      <AuthorAvatar name="You"/>
+                      <div className="ml-4 w-full">
+                        <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                          placeholder={activeCommit ? `Comment on commit ${activeCommit.hash}...` : 'Select a commit to comment on'}
+                          rows={3} className="w-full p-3 text-sm border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"/>
+                        <button onClick={handleAddComment} className="mt-2 float-right px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400" disabled={!commentText.trim()}>
+                          Add Comment
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-gray-900 mb-1">{commit.message}</p>
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p>By {commit.author} • {commit.date}</p>
-                    <p>Branch: {commit.branch}</p>
-                    <p>{commit.filesChanged} files • +{commit.additions} -{commit.deletions}</p>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pull Requests */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <GitPullRequest className="h-5 w-5 mr-2" />
-              Pull Requests
-            </h3>
-            <div className="space-y-3">
-              {pullRequests.map(pr => (
-                <div key={pr.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                  <div className="flex items-start justify-between mb-2">
-                    <span className={`px-2 py-1 text-xs rounded-full flex items-center ${getStatusColor(pr.status)}`}>
-                      {getStatusIcon(pr.status)}
-                      <span className="ml-1">{pr.status}</span>
-                    </span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-900 mb-1">{pr.title}</p>
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p>By {pr.author} • {pr.createdAt}</p>
-                    <p>{pr.branch}</p>
-                    <p>{pr.commits} commits • {pr.filesChanged} files changed</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Panel - File Explorer & Code */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* File Explorer */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <GitBranch className="h-5 w-5 mr-2" />
-              File Changes
-            </h3>
-            <div className="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-              {renderFileTree(fileStructure)}
-            </div>
-          </div>
-
-          {/* Code Viewer */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Eye className="h-5 w-5 mr-2" />
-                Code Changes
-                {selectedFile && <span className="ml-2 text-sm text-gray-500">({selectedFile})</span>}
-              </h3>
-              <div className="flex space-x-2">
-                <button className="px-3 py-1 bg-success-100 text-success-700 rounded-lg hover:bg-success-200 transition-colors text-sm">
-                  Approve
-                </button>
-                <button className="px-3 py-1 bg-error-100 text-error-700 rounded-lg hover:bg-error-200 transition-colors text-sm">
-                  Request Changes
-                </button>
-                <button className="px-3 py-1 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors text-sm">
-                  Comment
-                </button>
-              </div>
-            </div>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <pre className="bg-gray-50 p-4 text-sm overflow-x-auto">
-                <code className="language-typescript">{codeExample}</code>
-              </pre>
-            </div>
-          </div>
-
-          {/* Review Comments */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <MessageSquare className="h-5 w-5 mr-2" />
-              Review Comments
-            </h3>
-            <div className="space-y-4">
-              <div className="border-l-4 border-primary-500 pl-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900">Mentor Review</span>
-                  <span className="text-xs text-gray-500">2 hours ago</span>
-                </div>
-                <p className="text-sm text-gray-700">Great work on implementing input validation! The error handling looks solid. Consider adding unit tests for the validation functions.</p>
-              </div>
-              <div className="border-l-4 border-warning-500 pl-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900">Security Review</span>
-                  <span className="text-xs text-gray-500">1 day ago</span>
-                </div>
-                <p className="text-sm text-gray-700">Please ensure the password hashing is using a secure algorithm like bcrypt with proper salt rounds.</p>
-              </div>
-            </div>
-            
-            {/* Add Comment */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <textarea
-                placeholder="Add a review comment..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                rows={3}
-              />
-              <div className="flex justify-end mt-2">
-                <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                  Add Comment
-                </button>
-              </div>
-            </div>
-          </div>
+              </>
+            ) : <div className="bg-white text-center p-12 rounded-xl shadow-sm border border-gray-100"><h3 className="text-lg font-semibold text-gray-800">No Commits Selected</h3><p className="mt-2 text-sm text-gray-500">Select a repository to see details.</p></div>}
+          </main>
         </div>
       </div>
     </div>
