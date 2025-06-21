@@ -1,3 +1,4 @@
 *.env
 git_data
 __pycache__
+*.db

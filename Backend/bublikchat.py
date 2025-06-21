@@ -33,6 +33,8 @@ def get_answer(question: str) -> str:
     )
     return resp.choices[0].message.content.strip()
 
+
+
 # ———————————————
 # 3) Main loop
 # ———————————————
