@@ -5,6 +5,7 @@ from gitFetcher import get_git_data_from_path
 from database import User, sign_in  
 import bublikchat
 import bublikproblem
+import database
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -115,6 +116,6 @@ def register():
 
 if __name__ == "__main__":
     port = 5500
-    bublikchat.init_convo_db()
+    database.init_convo_db()
 
     app.run(host="0.0.0.0", port=port)

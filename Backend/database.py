@@ -113,3 +113,34 @@ if __name__ == "main":
     print(f"GitHub URLs for PBL group {pbl_group_number}: {links}")
 
     conn.close()
+
+def init_convo_db():
+
+
+    conn = sqlite3.connect("bublik_convo.db")
+
+
+    c = conn.cursor()
+
+
+    c.execute("""
+
+
+        CREATE TABLE IF NOT EXISTS convo (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            role TEXT NOT NULL,
+
+            content TEXT NOT NULL,
+
+            ts DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+
+    """)
+
+
+    conn.commit()
+
+
+    conn.close()
