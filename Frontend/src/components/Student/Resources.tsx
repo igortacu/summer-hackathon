@@ -28,7 +28,6 @@ const Resources: React.FC = () => {
         },
         body: JSON.stringify({ idea: topic }),
       });
-
       console.log('Response status:', response.status);
       console.log('Response OK:', response.ok);
 
@@ -38,19 +37,17 @@ const Resources: React.FC = () => {
           errorData = await response.json(); // Try to parse error JSON
         } catch (e) {
           console.error("Failed to parse error response as JSON:", e);
-          // If parsing fails, use status text
           throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         throw new Error((errorData as any).message || `HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json(); // This is the line that was failing before
-      console.log('Received data from backend:', data); // Log the parsed data
+      const data = await response.json();
+      console.log('Received data from backend:', data);
 
       if (data.resources && Array.isArray(data.resources)) {
         setResources(data.resources);
       } else {
-        // If the backend returns valid JSON but not in the expected { "resources": [...] } format
         setError('Unexpected response format from API. Expected { "resources": [...] }');
         console.error('Unexpected response format:', data);
       }
@@ -65,7 +62,8 @@ const Resources: React.FC = () => {
   return (
     <div className="p-6 md:p-8 bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="flex items-center mb-6">
-        <Book className="h-6 w-6 text-indigo-500 mr-3" />
+        {/* Changed icon color */}
+        <Book className="h-6 w-6 text-amber-600 mr-3" />
         <h2 className="text-2xl font-bold text-gray-800">Literature Recommendations</h2>
       </div>
 
@@ -76,7 +74,7 @@ const Resources: React.FC = () => {
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <input
           type="text"
-          className="flex-grow p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-gray-700"
+          className="flex-grow p-3 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm text-gray-700"
           placeholder="e.g., Quantum Computing, Machine Learning, Data Structures"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
@@ -89,7 +87,8 @@ const Resources: React.FC = () => {
         <button
           onClick={fetchResources}
           disabled={loading || !topic.trim()}
-          className="flex items-center justify-center px-6 py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+          // Changed button colors to amber
+          className="flex items-center justify-center px-6 py-3 bg-amber-600 text-white font-semibold rounded-md shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -113,7 +112,7 @@ const Resources: React.FC = () => {
           <ul className="space-y-4">
             {resources.map((resource, index) => (
               <li key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
-                <h4 className="text-lg font-medium text-indigo-700 mb-1">
+                <h4 className="text-lg font-medium text-amber-700 mb-1"> {/* Changed link title color */}
                   <a href={resource.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
                     {resource.title}
                   </a>
