@@ -1,1 +1,1 @@
-mai incolo
+  Bublink is a platform which integrates multiple tools for managing Problem Based Learning (PBL) projects for university students. It integrates mentors' monitoring and task scheduling together with a detailed analysis of the task completion for mentors.

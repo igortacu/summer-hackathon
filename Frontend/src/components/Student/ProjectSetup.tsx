@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Mail, Send, ArrowRight, Users, CheckCircle } from 'lucide-react';
+import { Plus, Mail, ArrowRight, CheckCircle } from 'lucide-react';
 
 interface ProjectSetupProps {
   onComplete: (data: any) => void;
@@ -24,7 +24,7 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
     name: '',
     description: '',
     members: [] as string[],
-    roles: {} as Record<string, string>
+    role: ''
   });
   const [newEmail, setNewEmail] = useState('');
 
@@ -38,10 +38,10 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
     }
   };
 
-  const handleRoleChange = (email: string, role: string) => {
+  const handleRoleChange = (value: string) => {
     setProjectData(prev => ({
       ...prev,
-      roles: { ...prev.roles, [email]: role }
+      role: value
     }));
   };
 
@@ -60,7 +60,7 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
       case 2:
         return projectData.members.length > 0;
       case 3:
-        return Object.keys(projectData.roles).length === projectData.members.length + 1; // +1 for self
+        return projectData.role !== '';
       default:
         return false;
     }
@@ -74,17 +74,21 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
           <div className="flex items-center justify-between mb-4">
             {[1, 2, 3].map((stepNum) => (
               <div key={stepNum} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  stepNum <= step 
-                    ? 'bg-primary-600 text-white' 
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    stepNum <= step
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
                   {stepNum < step ? <CheckCircle className="h-4 w-4" /> : stepNum}
                 </div>
                 {stepNum < 3 && (
-                  <div className={`w-16 h-1 mx-2 ${
-                    stepNum < step ? 'bg-primary-600' : 'bg-gray-200'
-                  }`} />
+                  <div
+                    className={`w-16 h-1 mx-2 ${
+                      stepNum < step ? 'bg-primary-600' : 'bg-gray-200'
+                    }`}
+                  />
                 )}
               </div>
             ))}
@@ -93,12 +97,12 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
             <h2 className="text-2xl font-bold text-gray-900">
               {step === 1 && 'Project Details'}
               {step === 2 && 'Invite Team Members'}
-              {step === 3 && 'Assign Roles'}
+              {step === 3 && 'Assign Your Role'}
             </h2>
             <p className="text-gray-600 mt-1">
               {step === 1 && 'Tell us about your project'}
               {step === 2 && 'Add your teammates to collaborate'}
-              {step === 3 && 'Define everyone\'s expertise'}
+              {step === 3 && 'Define your expertise'}
             </p>
           </div>
         </div>
@@ -163,15 +167,7 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
                   <h4 className="font-medium text-gray-900">Team Members ({projectData.members.length})</h4>
                   <div className="space-y-2">
                     {projectData.members.map((email, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 text-gray-400 mr-3" />
-                          <span className="text-sm text-gray-900">{email}</span>
-                        </div>
-                        <span className="text-xs text-gray-500 bg-warning-100 text-warning-800 px-2 py-1 rounded">
-                          Pending
-                        </span>
-                      </div>
+                      <div key={index} className="p-3 bg-gray-50 rounded-lg">{email}</div>
                     ))}
                   </div>
                 </div>
@@ -182,50 +178,19 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h4 className="font-medium text-gray-900 mb-4">Assign roles to team members</h4>
-                
-                {/* Self role */}
-                <div className="mb-4 p-4 bg-primary-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-sm font-medium">You</span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">Your role</span>
-                    </div>
-                    <select
-                      value={projectData.roles['self'] || ''}
-                      onChange={(e) => handleRoleChange('self', e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    >
-                      <option value="">Select role</option>
-                      {ROLES.map(role => (
-                        <option key={role} value={role}>{role}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Team members roles */}
-                <div className="space-y-3">
-                  {projectData.members.map((email, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 text-gray-400 mr-3" />
-                        <span className="text-sm text-gray-900">{email}</span>
-                      </div>
-                      <select
-                        value={projectData.roles[email] || ''}
-                        onChange={(e) => handleRoleChange(email, e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Select role</option>
-                        {ROLES.map(role => (
-                          <option key={role} value={role}>{role}</option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
+                <h4 className="font-medium text-gray-900 mb-4">Assign Your Role</h4>
+                <div className="p-4 bg-primary-50 rounded-lg flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-900">Your role</span>
+                  <select
+                    value={projectData.role}
+                    onChange={(e) => handleRoleChange(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">Select role</option>
+                    {ROLES.map(role => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -233,7 +198,7 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
 
           <div className="mt-8 flex justify-between">
             <button
-              onClick={() => setStep(Math.max(1, step - 1))}
+              onClick={() => setStep(step - 1)}
               disabled={step === 1}
               className="px-6 py-3 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
