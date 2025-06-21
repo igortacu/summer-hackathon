@@ -1,0 +1,21 @@
+{
+  "community": {
+    "headline1": "Alătură-te VirtLab",
+    "headline2": "comunității",
+    "subheading": "Conectează-te cu alți cursanți, primește sfaturi de la Cody și rămâi la curent cu tot ce înseamnă VirtLab!",
+    "socials": {
+      "telegram": {"name":"Telegram","description":"Alătură-te chat-ului nostru principal · 15K+ membri"},
+      "instagram":{"name":"Instagram","description":"Actualizări zilnice & backstage · 8K urmăritori"},
+      "twitter":{"name":"X (Twitter)","description":"Ultimele știri & anunțuri · 12K urmăritori"},
+      "facebook":{"name":"Facebook","description":"Evenimente comunitare & discuții · 6K membri"}
+    }
+  },
+  "navbar": {
+    "home": "Acasă",
+    "experiments": "Experimente",
+    "about": "Despre",
+    "community": "Comunitate",
+    "dashboard": "Tablou de bord",
+    "signup": "Înregistrează-te"
+  }
+}

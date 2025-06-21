@@ -1,0 +1,21 @@
+{
+  "community": {
+    "headline1": "Присоединяйся к VirtLab",
+    "headline2": "сообществу",
+    "subheading": "Общайся с другими учениками, получай советы от Коди и будь в курсе всех событий VirtLab!",
+    "socials": {
+      "telegram":{"name":"Telegram","description":"Присоединись к нашему основному чату · 15K участников"},
+      "instagram":{"name":"Instagram","description":"Ежедневные обновления & закулисье · 8K подписчиков"},
+      "twitter":{"name":"X (Twitter)","description":"Свежие новости & объявления · 12K подписчиков"},
+      "facebook":{"name":"Facebook","description":"Мероприятия сообщества & обсуждения · 6K участников"}
+    }
+  },
+  "navbar": {
+    "home": "Главная",
+    "experiments": "Эксперименты",
+    "about": "О нас",
+    "community": "Сообщество",
+    "dashboard": "Панель",
+    "signup": "Регистрация"
+  }
+}
