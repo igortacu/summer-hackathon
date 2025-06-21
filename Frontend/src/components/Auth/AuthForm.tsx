@@ -32,7 +32,7 @@ export default function AuthForm({ mode, onSubmit, onModeChange }: AuthFormProps
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-            LearnFlow
+            Bublink
           </h1>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             {mode === 'login' ? 'Welcome back' : 'Get started'}

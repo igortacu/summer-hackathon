@@ -20,7 +20,7 @@ export default function Header({ user, notifications, onLogout }: HeaderProps) {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-                LearnFlow
+                aici pui logo
               </h1>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Clock, AlertTriangle, CheckCircle, User, Tag } from 'lucide-react';
 import { Task } from '../../types';
 
@@ -16,6 +17,16 @@ export default function KanbanBoard({ tasks, onTaskUpdate }: KanbanBoardProps) {
 
   const getTasksByStatus = (status: string) => {
     return tasks.filter(task => task.status === status);
+  };
+
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+    
+    if (source.droppableId !== destination.droppableId) {
+      onTaskUpdate(draggableId, { status: destination.droppableId });
+    }
   };
 
   const getStatusIcon = (statusColor: string) => {
@@ -57,85 +68,106 @@ export default function KanbanBoard({ tasks, onTaskUpdate }: KanbanBoardProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {columns.map(column => (
-        <div key={column.id} className={`rounded-xl border-2 border-dashed ${column.color} p-4`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">{column.title}</h3>
-            <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm font-medium">
-              {getTasksByStatus(column.id).length}
-            </span>
-          </div>
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {columns.map(column => (
+          <div key={column.id} className={`rounded-xl border-2 border-dashed ${column.color} p-4`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">{column.title}</h3>
+              <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm font-medium">
+                {getTasksByStatus(column.id).length}
+              </span>
+            </div>
 
-          <div className="space-y-3">
-            {getTasksByStatus(column.id).map(task => (
-              <div
-                key={task.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
-              >
-                {/* Task header */}
-                <div className="flex items-start justify-between mb-3">
-                  <h4 className="font-medium text-gray-900 text-sm leading-tight">
-                    {task.title}
-                  </h4>
-                  {getStatusIcon(task.statusColor)}
-                </div>
-
-                {/* Task description */}
-                <p className="text-gray-600 text-xs mb-3 line-clamp-2">
-                  {task.description}
-                </p>
-
-                {/* Task metadata */}
-                <div className="space-y-2">
-                  {/* Priority and points */}
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority)}`}>
-                      {task.priority} priority
-                    </span>
-                    <span className="text-xs font-medium text-primary-600">
-                      {task.points} pts
-                    </span>
-                  </div>
-
-                  {/* Assigned to */}
-                  <div className="flex items-center text-xs text-gray-500">
-                    <User className="h-3 w-3 mr-1" />
-                    {task.assignedTo}
-                  </div>
-
-                  {/* Due date */}
-                  <div className="flex items-center text-xs text-gray-500">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Due {formatDate(task.dueDate)}
-                  </div>
-
-                  {/* Tags */}
-                  {task.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {task.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+            <Droppable droppableId={column.id}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`space-y-3 min-h-[200px] ${
+                    snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg' : ''
+                  }`}
+                >
+                  {getTasksByStatus(column.id).map((task, index) => (
+                    <Draggable key={task.id} draggableId={task.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer ${
+                            snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
+                          }`}
                         >
-                          <Tag className="h-2 w-2 mr-1" />
-                          {tag}
-                        </span>
-                      ))}
+                          {/* Task header */}
+                          <div className="flex items-start justify-between mb-3">
+                            <h4 className="font-medium text-gray-900 text-sm leading-tight">
+                              {task.title}
+                            </h4>
+                            {getStatusIcon(task.statusColor)}
+                          </div>
+
+                          {/* Task description */}
+                          <p className="text-gray-600 text-xs mb-3 line-clamp-2">
+                            {task.description}
+                          </p>
+
+                          {/* Task metadata */}
+                          <div className="space-y-2">
+                            {/* Priority and points */}
+                            <div className="flex items-center justify-between">
+                              <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority)}`}>
+                                {task.priority} priority
+                              </span>
+                              <span className="text-xs font-medium text-primary-600">
+                                {task.points} pts
+                              </span>
+                            </div>
+
+                            {/* Assigned to */}
+                            <div className="flex items-center text-xs text-gray-500">
+                              <User className="h-3 w-3 mr-1" />
+                              {task.assignedTo}
+                            </div>
+
+                            {/* Due date */}
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Due {formatDate(task.dueDate)}
+                            </div>
+
+                            {/* Tags */}
+                            {task.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {task.tags.map((tag, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+                                  >
+                                    <Tag className="h-2 w-2 mr-1" />
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                  
+                  {getTasksByStatus(column.id).length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      <p className="text-sm">No tasks yet</p>
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
-
-            {getTasksByStatus(column.id).length === 0 && (
-              <div className="text-center py-8 text-gray-400">
-                <p className="text-sm">No tasks yet</p>
-              </div>
-            )}
+              )}
+            </Droppable>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </DragDropContext>
   );
 }

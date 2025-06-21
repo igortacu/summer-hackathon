@@ -5,9 +5,8 @@ import {
   CheckSquare, 
   BarChart3, 
   Users, 
-  MessageSquare, 
   Calendar,
-  Bot 
+  FileText
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,16 +21,14 @@ export default function Sidebar({ activeTab, onTabChange, userRole }: SidebarPro
     { id: 'projects', label: 'My Projects', icon: FolderOpen },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
-    { id: 'ai-assistant', label: 'Bublik AI', icon: Bot },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
   ];
 
   const mentorTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'groups', label: 'My Groups', icon: Users },
-    { id: 'review', label: 'Code Review', icon: CheckSquare },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'stats', label: 'Analytics', icon: BarChart3 },
+    { id: 'review', label: 'Code Review', icon: FileText },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
   ];
 

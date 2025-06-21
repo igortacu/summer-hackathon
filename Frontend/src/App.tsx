@@ -4,7 +4,15 @@ import RoleSelection from './components/Auth/RoleSelection';
 import ProjectSetup from './components/Student/ProjectSetup';
 import ProblemDefinition from './components/Student/ProblemDefinition';
 import Dashboard from './components/Student/Dashboard';
+import MyProjects from './components/Student/MyProjects';
+import MyTasks from './components/Student/MyTasks';
+import Statistics from './components/Student/Statistics';
+import Calendar from './components/Student/Calendar';
 import MentorDashboard from './components/Mentor/MentorDashboard';
+import MyGroups from './components/Mentor/MyGroups';
+import CodeReview from './components/Mentor/CodeReview';
+import Analytics from './components/Mentor/Analytics';
+import MentorCalendar from './components/Mentor/MentorCalendar';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 
@@ -39,7 +47,9 @@ function App() {
   };
 
   const handleRoleSelection = (role: 'student' | 'mentor') => {
-    setUser(prev => prev ? { ...prev, role } : null);
+     setUser((prev: User | null) =>
+      prev ? { ...prev, role } : null
+    );
     
     if (role === 'student') {
       setAppState('project-setup');
@@ -53,8 +63,9 @@ function App() {
     setAppState('problem-definition');
   };
 
-  const handleProblemDefinition = (data: any) => {
-    setProjectData(prev => ({ ...prev, ...data }));
+const handleProblemDefinition = (data: any) => {
+    // <-- and here, too
+    setProjectData((prev: any) => ({ ...prev, ...data }));
     setAppState('dashboard');
   };
 
@@ -108,20 +119,21 @@ function App() {
           
           <main className="flex-1 overflow-hidden">
             {user.role === 'student' ? (
-              activeTab === 'dashboard' ? (
-                <Dashboard projectData={projectData} />
-              ) : (
-                <div className="p-8">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-                    </h2>
-                    <p className="text-gray-600">This section is coming soon!</p>
-                  </div>
-                </div>
-              )
+              <>
+                {activeTab === 'dashboard' && <Dashboard projectData={projectData} />}
+                {activeTab === 'projects' && <MyProjects projectData={projectData} />}
+                {activeTab === 'tasks' && <MyTasks />}
+                {activeTab === 'stats' && <Statistics />}
+                {activeTab === 'calendar' && <Calendar />}
+              </>
             ) : (
-              <MentorDashboard />
+              <>
+                {activeTab === 'dashboard' && <MentorDashboard />}
+                {activeTab === 'groups' && <MyGroups />}
+                {activeTab === 'review' && <CodeReview />}
+                {activeTab === 'analytics' && <Analytics />}
+                {activeTab === 'calendar' && <MentorCalendar />}
+              </>
             )}
           </main>
         </div>

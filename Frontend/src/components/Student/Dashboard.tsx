@@ -5,13 +5,11 @@ import {
   AlertTriangle, 
   TrendingUp, 
   Users, 
-  Bot,
   Plus,
   Filter,
   Search
 } from 'lucide-react';
 import KanbanBoard from './KanbanBoard';
-import AIAssistant from './AIAssistant';
 import StatsCards from './StatsCards';
 
 interface DashboardProps {
@@ -19,9 +17,9 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ projectData }: DashboardProps) {
-  const [showAI, setShowAI] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Mock data for demonstration
   const stats = {
@@ -39,7 +37,7 @@ export default function Dashboard({ projectData }: DashboardProps) {
     }
   };
 
-  const tasks = [
+  const [tasks, setTasks] = useState([
     {
       id: '1',
       title: 'Research existing solutions',
@@ -47,7 +45,7 @@ export default function Dashboard({ projectData }: DashboardProps) {
       assignedTo: 'Research Analyst',
       status: 'done' as const,
       priority: 'high' as const,
-      dueDate: new Date(Date.now() - 86400000), // Yesterday
+      dueDate: new Date(Date.now() - 86400000),
       statusColor: 'green' as const,
       points: 25,
       tags: ['research', 'analysis']
@@ -59,7 +57,7 @@ export default function Dashboard({ projectData }: DashboardProps) {
       assignedTo: 'Backend Developer',
       status: 'in-progress' as const,
       priority: 'high' as const,
-      dueDate: new Date(Date.now() + 172800000), // 2 days from now
+      dueDate: new Date(Date.now() + 172800000),
       statusColor: 'green' as const,
       points: 35,
       tags: ['architecture', 'backend']
@@ -71,7 +69,7 @@ export default function Dashboard({ projectData }: DashboardProps) {
       assignedTo: 'UI/UX Designer',
       status: 'in-progress' as const,
       priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 43200000), // 12 hours from now
+      dueDate: new Date(Date.now() + 43200000),
       statusColor: 'yellow' as const,
       points: 30,
       tags: ['design', 'ui']
@@ -83,7 +81,7 @@ export default function Dashboard({ projectData }: DashboardProps) {
       assignedTo: 'Frontend Developer',
       status: 'todo' as const,
       priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 259200000), // 3 days from now
+      dueDate: new Date(Date.now() + 259200000),
       statusColor: 'green' as const,
       points: 20,
       tags: ['setup', 'devops']
@@ -95,12 +93,41 @@ export default function Dashboard({ projectData }: DashboardProps) {
       assignedTo: 'Backend Developer',
       status: 'todo' as const,
       priority: 'high' as const,
-      dueDate: new Date(Date.now() - 43200000), // 12 hours ago (overdue)
+      dueDate: new Date(Date.now() - 43200000),
       statusColor: 'red' as const,
       points: 40,
       tags: ['database', 'backend']
     }
-  ];
+  ]);
+
+  const handleAddTask = () => {
+    const newTask = {
+      id: Date.now().toString(),
+      title: 'New Task',
+      description: 'Task description',
+      assignedTo: 'Unassigned',
+      status: 'todo' as const,
+      priority: 'medium' as const,
+      dueDate: new Date(Date.now() + 604800000), // 7 days from now
+      statusColor: 'green' as const,
+      points: 10,
+      tags: ['new']
+    };
+    setTasks(prev => [...prev, newTask]);
+  };
+
+  const handleTaskUpdate = (taskId: string, updates: any) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId ? { ...task, ...updates } : task
+    ));
+  };
+
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || task.status === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -108,18 +135,14 @@ export default function Dashboard({ projectData }: DashboardProps) {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{projectData.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{projectData?.name || 'Project Dashboard'}</h1>
             <p className="text-gray-600 mt-1">Track your progress and manage tasks</p>
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => setShowAI(!showAI)}
-              className="flex items-center px-4 py-2 bg-gradient-to-r from-accent-600 to-accent-700 text-white rounded-lg hover:from-accent-700 hover:to-accent-800 transition-all"
+              onClick={handleAddTask}
+              className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
-              <Bot className="h-4 w-4 mr-2" />
-              Ask Bublik AI
-            </button>
-            <button className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
               <Plus className="h-4 w-4 mr-2" />
               New Task
             </button>
@@ -154,25 +177,51 @@ export default function Dashboard({ projectData }: DashboardProps) {
             <option value="done">Completed</option>
           </select>
         </div>
-        <button className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
           <Filter className="h-4 w-4 mr-2" />
           Filters
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Main content */}
-        <div className="lg:col-span-3">
-          <KanbanBoard tasks={tasks} onTaskUpdate={() => {}} />
-        </div>
-
-        {/* AI Assistant Sidebar */}
-        {showAI && (
-          <div className="lg:col-span-1">
-            <AIAssistant onClose={() => setShowAI(false)} />
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <option value="">All Priorities</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <option value="">All Members</option>
+                <option value="self">Me</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <option value="">All Dates</option>
+                <option value="overdue">Overdue</option>
+                <option value="today">Due Today</option>
+                <option value="week">This Week</option>
+              </select>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Kanban Board */}
+      <KanbanBoard tasks={filteredTasks} onTaskUpdate={handleTaskUpdate} />
     </div>
   );
 }
