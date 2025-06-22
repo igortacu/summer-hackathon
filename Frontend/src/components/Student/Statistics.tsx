@@ -189,7 +189,7 @@ const ContributionGraph: React.FC<{ data: Contribution[] }> = ({ data }) => {
       </div>
       <div className="flex items-center justify-end mt-4 text-xs text-[#8B5E34]">
         <span>Less</span>
-        <div className="w-4 h-4 mx-1 rounded-sm bg-[#FFEDB8]" />
+        <div className="w-4 h-4 mx-1 rounded-sm bg-[rgb(255, 255, 255)]" />
         <div className="w-4 h-4 mx-1 rounded-sm bg-[#E7BC91]" />
         <div className="w-4 h-4 mx-1 rounded-sm bg-[#A47148]" />
         <div className="w-4 h-4 mx-1 rounded-sm bg-[#6F4518]" />
@@ -256,7 +256,7 @@ export default function Statistics() {
       change: '+8%',
       icon: Award,
       color: 'text-[#A47148]',
-      bgColor: 'bg-[#D4A276]',
+      bgColor: 'bg-[ #D4A276]',
     },
     {
       title: 'Productivity',
@@ -279,7 +279,7 @@ export default function Statistics() {
   const totalContributions = contributions.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-[#FFEDB8] min-h-screen">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-[rgb(255, 255, 255)] min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#6F4518]">Statistics</h1>
         <p className="text-[#8B5E34] mt-1">
@@ -314,7 +314,7 @@ export default function Statistics() {
 
       {/* Contribution Graph */}
       <div className="rounded-xl border border-[#BC8A5F] p-6 mb-8 bg-[#F3D5B5]">
-        <h3 className="text-lg font-semibold text-[#6F4518] mb-1">
+        <h3 className="text-lg font-semibold text-[rgb(155, 109, 60)] mb-1">
           Contribution Activity
         </h3>
         <p className="text-sm text-[#8B5E34] mb-4">
@@ -353,7 +353,7 @@ export default function Statistics() {
         </div>
 
         {/* Weekly Progress */}
-        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#E7BC91]">
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[rgb(239, 202, 163)]">
           <h3 className="text-lg font-semibold text-[#6F4518] mb-4">Weekly Progress</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weeklyProgressData}>
@@ -373,8 +373,8 @@ export default function Statistics() {
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Daily Commitment */}
-        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#D4A276]">
-          <h3 className="text-lg font-semibold text-[#6F4518] mb-4">
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[rgb(243, 198, 159)]">
+          <h3 className="text-lg font-semibold text-[rgb(93, 53, 10)] mb-4">
             Daily Time Commitment
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -389,7 +389,7 @@ export default function Statistics() {
                 type="monotone"
                 dataKey="hours"
                 stroke="#8B5E34"
-                fill="#8B5E34"
+                fill="rgb(197, 138, 83)"
                 fillOpacity={0.3}
               />
             </AreaChart>
@@ -397,7 +397,7 @@ export default function Statistics() {
         </div>
 
         {/* Performance Trends */}
-        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#BC8A5F]">
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[rgb(142, 92, 49)]">
           <h3 className="text-lg font-semibold text-[#F3D5B5] mb-4">
             Performance Trends
           </h3>
@@ -407,12 +407,12 @@ export default function Statistics() {
               <XAxis dataKey="month" stroke="#6F4518" />
               <YAxis stroke="#6F4518" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#FFEDB8', border: '1px solid #6F4518' }}
+                contentStyle={{ backgroundColor: ' #FFEDB8', border: '1px solid #6F4518' }}
               />
               <Line
                 type="monotone"
                 dataKey="onTime"
-                stroke="#6F4518"
+                stroke=" #6F4518"
                 strokeWidth={2}
                 name="On-Time %"
               />
@@ -430,7 +430,7 @@ export default function Statistics() {
 
       {/* Insights */}
       <div className="mt-8 bg-gradient-to-r from-[#FFEDB8] to-[#E7BC91] rounded-xl p-6 border border-[#BC8A5F]">
-        <h3 className="text-lg font-semibold text-[#6F4518] mb-4">Key Insights</h3>
+        <h3 className="text-lg font-semibold text-[ #6F4518] mb-4">Key Insights</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-[#FFEDB8] rounded-lg p-4">
             <h4 className="font-medium text-[#6F4518] mb-2">🎯 Strong Performance</h4>
