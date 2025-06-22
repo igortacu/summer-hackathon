@@ -27,7 +27,7 @@ interface Message {
 }
 
 /**
- * A simplified AI Assistant chat component with a circular button.
+ * AI Assistant chat component fetching responses from backend
  */
 const AIAssistant = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -36,42 +36,57 @@ const AIAssistant = () => {
         { id: 1, text: "Bună! Cum te pot ajuta astăzi?", sender: 'ai' }
     ]);
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Effect to scroll to the latest message
+    // Scroll to latest message
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (inputValue.trim() === '') return;
+        const text = inputValue.trim();
+        if (!text) return;
 
-        // Add user's message
-        const userMessage: Message = {
-            id: Date.now(),
-            text: inputValue,
-            sender: 'user',
-        };
+        // Add user message
+        const userMessage: Message = { id: Date.now(), text, sender: 'user' };
         setMessages(prev => [...prev, userMessage]);
         setInputValue('');
 
-        // Simulate AI response after a short delay
-        setTimeout(() => {
-            const aiResponse: Message = {
-                id: Date.now() + 1,
-                text: "Mulțumesc pentru mesaj. Sunt un asistent demo. Un agent real va revizui această conversație.",
-                sender: 'ai',
+        try {
+            setIsLoading(true);
+            const response = await fetch('http://localhost:5500/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            // Expecting { reply: string }
+            const aiReplyText = data.reply || 'Ne pare rău, nu am un răspuns acum.';
+            const aiMessage: Message = { id: Date.now() + 1, text: aiReplyText, sender: 'ai' };
+            setMessages(prev => [...prev, aiMessage]);
+        } catch (error) {
+            console.error('Fetch error:', error);
+            const errorMessage: Message = {
+                id: Date.now() + 2,
+                text: 'Eroare la server. Încearcă din nou mai târziu.',
+                sender: 'ai'
             };
-            setMessages(prev => [...prev, aiResponse]);
-        }, 1000);
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    // Collapsed sticker view
     if (!isOpen) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                // MODIFICATION: Removed text and gap class to make it a circle
                 className="fixed bottom-5 right-5 bg-amber-800 text-white p-4 rounded-full shadow-lg hover:bg-amber-900 transition-transform duration-300 ease-in-out z-50 flex items-center justify-center"
                 aria-label="Open AI Assistant"
             >
@@ -80,12 +95,11 @@ const AIAssistant = () => {
         );
     }
 
-    // Expanded chat window view
     return (
         <div className="fixed bottom-5 right-5 w-full max-w-sm h-[60vh] bg-white rounded-xl shadow-2xl z-50 flex flex-col animate-fade-in-up">
             {/* Header */}
             <header className="flex items-center justify-between p-3 border-b bg-gray-50 rounded-t-xl">
-                 <h3 className="text-lg font-semibold text-gray-800">AI Assistant</h3>
+                <h3 className="text-lg font-semibold text-gray-800">AI Assistant</h3>
                 <button
                     onClick={() => setIsOpen(false)}
                     className="p-1 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300"
@@ -95,36 +109,43 @@ const AIAssistant = () => {
                 </button>
             </header>
 
-            {/* Messages Area */}
+            {/* Messages */}
             <div className="flex-1 p-4 overflow-y-auto bg-white space-y-4">
-                {messages.map((message) => (
-                    <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {messages.map(msg => (
+                    <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-white ${
-                            message.sender === 'user'
-                            ? 'bg-amber-700 rounded-br-lg'
-                            : 'bg-gray-500 rounded-bl-lg text-white'
+                            msg.sender === 'user'
+                                ? 'bg-amber-700 rounded-br-lg'
+                                : 'bg-gray-500 rounded-bl-lg'
                         }`}>
-                           {message.text}
+                            {msg.text}
                         </div>
                     </div>
                 ))}
+                {isLoading && (
+                    <div className="flex justify-start">
+                        <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-gray-300 text-white animate-pulse">
+                            Se încarcă...
+                        </div>
+                    </div>
+                )}
                 <div ref={chatEndRef} />
             </div>
 
-            {/* Input Area */}
+            {/* Input */}
             <footer className="p-3 border-t bg-gray-50 rounded-b-xl">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <input
                         type="text"
                         value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
+                        onChange={e => setInputValue(e.target.value)}
                         placeholder="Scrie un mesaj..."
                         className="flex-1 p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                     <button
                         type="submit"
                         className="p-2 rounded-full text-amber-700 hover:text-amber-800 disabled:text-gray-300"
-                        disabled={!inputValue.trim()}
+                        disabled={!inputValue.trim() || isLoading}
                         aria-label="Send message"
                     >
                         <SendIcon />

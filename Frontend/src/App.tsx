@@ -239,12 +239,14 @@ export default function App() {
             {user.role === 'student' ? (
               <>
                 {activeTab === 'dashboard' && (
-                  <Dashboard
-                    projectData={projectData}
-                    problemData={problemData}
-                    userRole={projectData.roles[0]}
-                  />
-                )}
+  <Dashboard
+    projectData={projectData}
+    problemData={problemData}
+    userRole={projectData.roles[0]}
+    userEmail={user.email}              // ← add this
+  />
+)}
+
                 {activeTab === 'projects' && (
                   <MyProjects
                     projectData={{
