@@ -8,7 +8,7 @@ import Dashboard from './components/Student/Dashboard';
 import MyProjects from './components/Student/MyProjects';
 import MyTasks from './components/Student/MyTasks';
 import Statistics from './components/Student/Statistics';
-import Resources from './components/Student/Resources'; // CORRECTED: Import Resources component
+import Resources from './components/Student/Resources';
 import MentorDashboard from './components/Mentor/MentorDashboard';
 import MyGroups from './components/Mentor/MyGroups';
 import CodeReview from './components/Mentor/CodeReview';
@@ -241,7 +241,8 @@ export default function App() {
                   <Dashboard
                     projectData={projectData}
                     problemData={problemData}
-                    userRole={projectData.roles[0]}
+                    userEmail={user.email} // FIX: Pass user.email here
+                    userRole={user.role} // Pass user.role as required by DashboardProps
                   />
                 )}
                 {activeTab === 'projects' && (
@@ -260,7 +261,7 @@ export default function App() {
                   />
                 )}
                 {activeTab === 'stats' && <Statistics />}
-                {activeTab === 'resources' && <Resources />} {/* NEW: Render Resources component */}
+                {activeTab === 'resources' && <Resources />}
                 {activeTab === 'chat' && (
                   <ChatList
                     groups={[studentGroup]}
