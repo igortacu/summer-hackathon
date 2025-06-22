@@ -2,9 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from gitFetcher import get_git_data_from_path
-from database import User, sign_in  
+from database import User, sign_in
 import bublikchat
-import bublikproblem
+import bublikproblem # Ensure this is the file where you updated distribute_tasks
 import database
 
 # Initialize Flask app
@@ -19,7 +19,7 @@ app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", True)
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
     """
-a
+    a
     """
     data = request.get_json()
     # Check that the request has a valid JSON body with a 'message' key
@@ -51,14 +51,16 @@ def get_tasks():
     {"idea": "Describe your idea here"}
     """
     data = request.get_json()
-    tasks = bublikproblem.distribute_tasks(data["idea"])
-    return jsonify({"tasks": tasks})
+    # bublikproblem.distribute_tasks now returns a dictionary { "analysis": "...", "tasks": [...] }
+    # So, we can directly jsonify its output.
+    task_distribution_data = bublikproblem.distribute_tasks(data["idea"])
+    return jsonify(task_distribution_data) # This will correctly jsonify the dict
 
-@app.route("/api/resources", methods=["POST"]) 
-#! Not sure if we will use it 
+@app.route("/api/resources", methods=["POST"])
+#! Not sure if we will use it
 def get_resources():
     data = request.get_json()
-    resources = bublikproblem.get_resources(data["idea"])
+    resources = bublikproblem.recommend_resources(data["idea"]) # Changed to recommend_resources
     return jsonify({"resources": resources})
 
 @app.route("/git/<group_number>", methods=["GET"])
@@ -85,7 +87,7 @@ def register():
             role=data.get("role"),
             password=data.get("password"),
             project_name=data.get("project_name"),
-            github_url=data.get("github_url", None), 
+            github_url=data.get("github_url", None),
         )
 
         # Register the user with the database

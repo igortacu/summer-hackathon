@@ -208,7 +208,7 @@ export default function Statistics() {
     { name: 'Completed', value: 8, color: '#6F4518' },
     { name: 'In Progress', value: 3, color: '#BC8A5F' },
     { name: 'To Do', value: 4, color: '#D4A276' },
-    { name: 'Overdue', value: 1, color: '#F3D5B5' },
+    { name: 'Overdue', value: 1, color: '#a36921' },
   ];
   const weeklyProgressData = [
     { week: 'Week 1', completed: 2, assigned: 3 },
@@ -292,7 +292,7 @@ export default function Statistics() {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className={`rounded-xl border border-[#BC8A5F] p-6 ${stat.bgColor}`}
+            className={`rounded-xl border border-[#BC8A5F] p-6 bg-[#FFFFFF]`}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -313,7 +313,7 @@ export default function Statistics() {
       </div>
 
       {/* Contribution Graph */}
-      <div className="rounded-xl border border-[#BC8A5F] p-6 mb-8 bg-[#F3D5B5]">
+      <div className="rounded-xl border border-[#BC8A5F] p-6 mb-8 bg-[#f2e2ce]">
         <h3 className="text-lg font-semibold text-[rgb(155, 109, 60)] mb-1">
           Contribution Activity
         </h3>
@@ -326,7 +326,7 @@ export default function Statistics() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Task Status Distribution */}
-        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#F3D5B5]">
+        <div className="rounded-xl border border-[#BC8A5F] p-6 bg-[#f2e2ce]">
           <h3 className="text-lg font-semibold text-[#6F4518] mb-4">
             Task Status Distribution
           </h3>

@@ -106,8 +106,8 @@ def get_resources(idea: str) -> List[Dict[str, str]]:
         "[\n"
         "  {\"title\": \"Book Title Example\", \"link\": \"https://example.com/book\", \"description\": \"Summary of the book.\"},\n"
         "  {\"title\": \"Article Name Example\", \"link\": \"https://example.org/article\", \"description\": \"Summary of the article.\"}\n"
-        "]"
-    )
+            "]"
+        )
     user_prompt = f"Solution idea: {idea}\n\nPropose literature and resources:"
 
     json_string_from_openai = ask_openai(system_prompt, user_prompt, max_tokens=1000)

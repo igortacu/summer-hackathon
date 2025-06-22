@@ -1,8 +1,10 @@
+// src/components/Student/TaskCard.tsx
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Calendar, User, Flag, Hash, Clock } from 'lucide-react';
+import { User, Calendar } from 'lucide-react'; // Import icons
 
+// Define Task interface here to ensure consistency and type safety within this component
 interface Task {
   id: string;
   title: string;
@@ -18,113 +20,94 @@ interface Task {
 
 interface TaskCardProps {
   task: Task;
-  onTaskUpdate: (taskId: string, updates: any) => void;
+  onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
 }
 
 export default function TaskCard({ task, onTaskUpdate }: TaskCardProps) {
+  // useSortable hook for DND-Kit functionality
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging // This boolean indicates if the current item is being dragged
   } = useSortable({ id: task.id });
 
+  // Apply transforms and transitions for smooth drag animation
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    // Add visual feedback when dragging
+    opacity: isDragging ? 0.7 : 1, // Make the dragged card slightly transparent
+    zIndex: isDragging ? 10 : 0, // Ensure the dragged card is on top of others
   };
 
-  const getPriorityColor = (priority: string) => {
+  // Helper function to determine priority badge color
+  const getPriorityColorClass = (priority: 'low' | 'medium' | 'high') => {
     switch (priority) {
-      case 'high': return 'text-red-600 bg-red-100';
-      case 'medium': return 'text-yellow-600 bg-yellow-100';
-      case 'low': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800'; // Changed to yellow for medium priority
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusColor = (statusColor: string) => {
+  // Helper function to determine the left border color based on statusColor
+  const getBorderColorClass = (statusColor: 'green' | 'yellow' | 'red') => {
     switch (statusColor) {
-      case 'red': return 'border-l-red-500';
-      case 'yellow': return 'border-l-yellow-500';
-      case 'green': return 'border-l-green-500';
-      default: return 'border-l-gray-500';
+      case 'green':
+        return 'border-green-500';
+      case 'yellow':
+        return 'border-yellow-500';
+      case 'red':
+        return 'border-red-500';
+      default:
+        return 'border-gray-300'; // Default if statusColor is not matched
     }
   };
-
-  const isOverdue = new Date() > task.dueDate;
-  const isDueSoon = !isOverdue && (task.dueDate.getTime() - Date.now()) < 86400000; // 24 hours
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 border-l-4 ${getStatusColor(task.statusColor)} p-4 cursor-grab hover:shadow-md transition-all duration-200 ${
-        isDragging ? 'opacity-50 rotate-3 scale-105 z-50' : ''
-      }`}
+      ref={setNodeRef} // Connects the DOM node to dnd-kit
+      style={style} // Applies dynamic styles for dragging
+      {...attributes} // Attributes for accessibility and drag-and-drop
+      {...listeners} // Event listeners for drag-and-drop interactions
+      className={`
+        bg-white rounded-lg p-4 shadow-md border-l-4
+        ${getBorderColorClass(task.statusColor)} // Apply border color based on task status color
+        ${isDragging ? 'ring-2 ring-primary-500' : ''} // Add a ring when dragging for visual emphasis
+        cursor-grab active:cursor-grabbing // Cursor styles for drag interaction
+      `}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <h4 className="font-semibold text-gray-900 text-sm leading-tight flex-1 pr-2">
-          {task.title}
-        </h4>
-        <div className="flex items-center space-x-1">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
-            {task.priority}
-          </span>
-        </div>
+      {/* Task Title and Priority Badge */}
+      <div className="flex justify-between items-start mb-2">
+        <h4 className="font-semibold text-gray-900 text-lg pr-2">{task.title}</h4>
+        <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full whitespace-nowrap ${getPriorityColorClass(task.priority)}`}>
+          {task.priority}
+        </span>
       </div>
 
-      {/* Description */}
+      {/* Task Description (only renders if description exists) */}
       {task.description && (
-        <p className="text-gray-600 text-xs mb-3 line-clamp-2">
-          {task.description}
-        </p>
+        <p className="text-gray-700 text-sm mb-3">{task.description}</p>
       )}
 
-      {/* Tags */}
-      {task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
-          {task.tags.slice(0, 3).map((tag, index) => (
-            <span
-              key={index}
-              className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-          {task.tags.length > 3 && (
-            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-              +{task.tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Assigned To and Points */}
+      <div className="flex items-center text-gray-500 text-sm mb-2">
+        <User className="w-4 h-4 mr-2" /> {/* User icon */}
+        <span>{task.assignedTo}</span> {/* Assigned user's name (e.g., "You", "John Doe") */}
+        <span className="ml-2 font-medium text-gray-600"># {task.points}pts</span> {/* Task points */}
+      </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <div className="flex items-center space-x-3">
-          {task.assignedTo && (
-            <div className="flex items-center">
-              <User className="h-3 w-3 mr-1" />
-              <span className="truncate max-w-20">{task.assignedTo}</span>
-            </div>
-          )}
-          <div className="flex items-center">
-            <Hash className="h-3 w-3 mr-1" />
-            <span>{task.points}pts</span>
-          </div>
-        </div>
-        
-        <div className={`flex items-center ${isOverdue ? 'text-red-600' : isDueSoon ? 'text-yellow-600' : 'text-gray-500'}`}>
-          <Calendar className="h-3 w-3 mr-1" />
-          <span>{task.dueDate.toLocaleDateString()}</span>
-          {isOverdue && <Clock className="h-3 w-3 ml-1" />}
-        </div>
+      {/* Due Date */}
+      <div className="flex items-center text-gray-500 text-sm">
+        <Calendar className="w-4 h-4 mr-2" /> {/* Calendar icon */}
+        <span>{task.dueDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span> {/* Formatted due date */}
       </div>
     </div>
   );

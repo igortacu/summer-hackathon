@@ -54,19 +54,21 @@ const AIAssistant = () => {
             });
 
             if (!response.ok) {
-                throw new Error(`Server error: ${response.statusText}`);
+                // If the response is not OK, try to parse error message from server
+                const errorData = await response.json();
+                throw new Error(`Server error (${response.status}): ${errorData.message || 'Unknown error'}`);
             }
 
             const data = await response.json();
-            // Expecting { reply: string }
-            const aiReplyText = data.reply || 'Ne pare rău, nu am un răspuns acum.';
+            // *** FIX HERE: Change data.reply to data.answer ***
+            const aiReplyText = data.answer || 'Ne pare rău, nu am un răspuns acum.';
             const aiMessage: Message = { id: Date.now() + 1, text: aiReplyText, sender: 'ai' };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
             console.error('Fetch error:', error);
             const errorMessage: Message = {
                 id: Date.now() + 2,
-                text: 'Eroare la server. Încearcă din nou mai târziu.',
+                text: `Eroare la server: ${error instanceof Error ? error.message : String(error)}. Încearcă din nou mai târziu.`,
                 sender: 'ai'
             };
             setMessages(prev => [...prev, errorMessage]);

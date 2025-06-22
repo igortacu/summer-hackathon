@@ -17,26 +17,25 @@ const Resources: React.FC = () => {
   const fetchResources = async () => {
     setError(null);
     setLoading(true);
-    setResources([]); // Clear previous resources
+    setResources([]);
 
     try {
       console.log('Attempting to fetch resources for topic:', topic);
       const response = await fetch('http://localhost:5500/api/resources', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idea: topic }),
       });
+
       console.log('Response status:', response.status);
       console.log('Response OK:', response.ok);
 
       if (!response.ok) {
         let errorData = {};
         try {
-          errorData = await response.json(); // Try to parse error JSON
+          errorData = await response.json();
         } catch (e) {
-          console.error("Failed to parse error response as JSON:", e);
+          console.error('Failed to parse error response as JSON:', e);
           throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         throw new Error((errorData as any).message || `HTTP error! status: ${response.status}`);
@@ -52,7 +51,7 @@ const Resources: React.FC = () => {
         console.error('Unexpected response format:', data);
       }
     } catch (e: any) {
-      console.error("Failed to fetch resources (frontend error):", e);
+      console.error('Failed to fetch resources (frontend error):', e);
       setError(`Failed to fetch resources: ${e.message}`);
     } finally {
       setLoading(false);
@@ -62,7 +61,6 @@ const Resources: React.FC = () => {
   return (
     <div className="p-6 md:p-8 bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="flex items-center mb-6">
-        {/* Changed icon color */}
         <Book className="h-6 w-6 text-amber-600 mr-3" />
         <h2 className="text-2xl font-bold text-gray-800">Literature Recommendations</h2>
       </div>
@@ -87,20 +85,27 @@ const Resources: React.FC = () => {
         <button
           onClick={fetchResources}
           disabled={loading || !topic.trim()}
-          // Changed button colors to amber
           className="flex items-center justify-center px-6 py-3 bg-amber-600 text-white font-semibold rounded-md shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            <>
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Fetching...
+            </>
           ) : (
-            <Search className="h-5 w-5 mr-2" />
+            <>
+              <Search className="h-5 w-5 mr-2" />
+              Get Resources
+            </>
           )}
-          {loading ? 'Fetching...' : 'Get Resources'}
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative flex items-center mb-6" role="alert">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative flex items-center mb-6"
+          role="alert"
+        >
           <XCircle className="h-5 w-5 mr-2" />
           <span className="block sm:inline">{error}</span>
         </div>
@@ -111,9 +116,17 @@ const Resources: React.FC = () => {
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Recommendations:</h3>
           <ul className="space-y-4">
             {resources.map((resource, index) => (
-              <li key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
-                <h4 className="text-lg font-medium text-amber-700 mb-1"> {/* Changed link title color */}
-                  <a href={resource.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              <li
+                key={index}
+                className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm"
+              >
+                <h4 className="text-lg font-medium text-amber-700 mb-1">
+                  <a
+                    href={resource.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
                     {resource.title}
                   </a>
                 </h4>
@@ -125,10 +138,15 @@ const Resources: React.FC = () => {
       )}
 
       {!loading && !error && resources.length === 0 && topic.trim() && (
-        <p className="text-center text-gray-500 mt-8">No resources found for "{topic}". Try a different topic.</p>
+        <p className="text-center text-gray-500 mt-8">
+          No resources found for "{topic}". Try a different topic.
+        </p>
       )}
-       {!loading && !error && resources.length === 0 && !topic.trim() && (
-        <p className="text-center text-gray-500 mt-8">Enter a topic to find recommendations.</p>
+
+      {!loading && !error && resources.length === 0 && !topic.trim() && (
+        <p className="text-center text-gray-500 mt-8">
+          Enter a topic to find recommendations.
+        </p>
       )}
     </div>
   );

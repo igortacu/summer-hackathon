@@ -1,129 +1,138 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-# from gitFetcher import get_git_data_from_path # Commented out as not provided
-# from database import User, sign_in # Commented out as not provided
-import bublikchat # Assuming bublikchat exists for init_convo_db
-import bublikresources # Import your bublikproblem.py
 
-# Initialize Flask app
+# External modules (ensure these exist and are importable)
+import bublikchat
+import bublikresources
+
 app = Flask(__name__)
-
-# Enable CORS for all routes and origins
 CORS(app)
 
 # Load configuration
 app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", True)
 
-# TODO: CHATBOT INTEGRATION
 
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
     """
     Placeholder for chatbot integration.
-    This route can be used to handle chatbot requests.
+    Handles incoming chatbot messages.
     """
-    data = request.get_json()
-    if not data:
+    payload = request.get_json()
+    if not payload:
         return jsonify({"status": "error", "message": "Invalid JSON payload"}), 400
 
-    message = data.get("message", "")
+    message = payload.get("message", "")
     if not message:
         return jsonify({"status": "error", "message": "No message provided"}), 400
-    else:
-        # Assuming bublikchat.chat_with_context exists and can be called without error
-        try:
-            bublikchat.chat_with_context(message)
-        except Exception as e:
-            print(f"Error in chatbot context: {e}")
-            return jsonify({"status": "error", "message": "Chatbot processing failed."}), 500
 
-    return jsonify({"status": "success", "message": "Chatbot integration not implemented yet."})
+    try:
+        # This should process the message and update context or return a reply
+        bublikchat.chat_with_context(message)
+    except Exception as e:
+        app.logger.error(f"Chatbot processing failed: {e}")
+        return (
+            jsonify({"status": "error", "message": "Chatbot processing failed."}),
+            500,
+        )
+
+    return jsonify(
+        {
+            "status": "success",
+            "message": "Chatbot integration not implemented yet.",
+        }
+    )
 
 
-# Routes
 @app.route("/api/ideas", methods=["POST"])
 def get_ideas():
     """
-    {"problem": "Describe your problem here"}
+    Generate solution ideas for a given problem.
+    Expects JSON: { "problem": "Describe your problem here" }
+    Returns: { "ideas": [...] }
     """
-    data = request.get_json()
-    if not data or "problem" not in data:
+    payload = request.get_json()
+    if not payload or "problem" not in payload:
         return jsonify({"status": "error", "message": "Problem description missing"}), 400
+
     try:
-        ideas = bublikresources.propose_ideas(data["problem"])
+        ideas = bublikresources.propose_ideas(payload["problem"])
         return jsonify({"ideas": ideas})
     except Exception as e:
-        print(f"Error getting ideas: {e}")
-        return jsonify({"status": "error", "message": f"Failed to generate ideas: {str(e)}"}), 500
+        app.logger.error(f"Error generating ideas: {e}")
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to generate ideas: {e}",
+                }
+            ),
+            500,
+        )
+
 
 @app.route("/api/tasks", methods=["POST"])
 def get_tasks():
     """
-    {"idea": "Describe your idea here"}
+    Distribute tasks for a chosen idea.
+    Expects JSON: { "idea": "Describe your idea here" }
+    Returns: { "tasks": [...] }
     """
-    data = request.get_json()
-    if not data or "idea" not in data:
+    payload = request.get_json()
+    if not payload or "idea" not in payload:
         return jsonify({"status": "error", "message": "Idea description missing"}), 400
+
     try:
-        tasks = bublikresources.distribute_tasks(data["idea"])
+        tasks = bublikresources.distribute_tasks(payload["idea"])
         return jsonify({"tasks": tasks})
     except Exception as e:
-        print(f"Error getting tasks: {e}")
-        return jsonify({"status": "error", "message": f"Failed to distribute tasks: {str(e)}"}), 500
+        app.logger.error(f"Error distributing tasks: {e}")
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to distribute tasks: {e}",
+                }
+            ),
+            500,
+        )
+
 
 @app.route("/api/resources", methods=["POST"])
 def get_resources():
     """
-    Expected input: {"idea": "Topic for resources"}
-    Returns: {"resources": [{"title": "...", "link": "...", "description": "..."}, ...]}
+    Fetch literature/resources recommendations for a given topic.
+    Expects JSON: { "idea": "Topic for resources" }
+    Returns: { "resources": [{ "title": ..., "link": ..., "description": ... }, ...] }
     """
-    data = request.get_json()
-    if not data or "idea" not in data:
-        return jsonify({"status": "error", "message": "Idea/topic for resources is missing"}), 400
+    payload = request.get_json()
+    if not payload or "idea" not in payload:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Topic for resources is missing",
+                }
+            ),
+            400,
+        )
+
     try:
-        resources = bublikresources.get_resources(data["idea"]) # Call the updated get_resources
-        # bublikproblem.get_resources now returns a list of dicts directly
+        resources = bublikresources.get_resources(payload["idea"])
         return jsonify({"resources": resources})
     except Exception as e:
-        print(f"Error getting resources: {e}")
-        return jsonify({"status": "error", "message": f"Failed to fetch resources: {str(e)}"}), 500
-
-# Commented out git and auth routes as they are not directly relevant to the current problem
-# and their dependencies (gitFetcher, database) were not provided.
-# @app.route("/git/<group_number>", methods=["GET"])
-# def get_git_data(group_number: int):
-#     return jsonify(results=get_git_data_from_path(group_number))
-
-# @app.route("/register", methods=["POST"])
-# def register():
-#     data = request.form
-#     try:
-#         user = User(
-#             name=data.get("name"),
-#             academic_group=data.get("academic_group"),
-#             pbl_group_number=data.get("pbl_group_number"),
-#             email=data.get("email"),
-#             role=data.get("role"),
-#             password=data.get("password"),
-#             project_name=data.get("project_name"),
-#         )
-#         success = sign_in(user)
-#         if success:
-#             return jsonify({"status": "success", "message": "User registered successfully"})
-#         else:
-#             return jsonify({"status": "error", "message": "Registration failed - email or role already exists"}), 400
-#     except Exception as e:
-#         return jsonify({"status": "error", "message": f"Registration error: {str(e)}"}), 500
+        app.logger.error(f"Error fetching resources: {e}")
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to fetch resources: {e}",
+                }
+            ),
+            500,
+        )
 
 
 if __name__ == "__main__":
-    port = 5500
-    # Assuming bublikchat.init_convo_db() is a valid function to initialize database.
-    # If not, comment this line out or replace with actual db init.
-    try:
-        bublikchat.init_convo_db()
-    except Exception as e:
-        print(f"Warning: Could not initialize conversation database: {e}")
-
-    app.run(host="0.0.0.0", port=port) 
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5500)))

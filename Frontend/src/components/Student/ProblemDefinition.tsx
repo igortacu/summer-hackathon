@@ -1,8 +1,8 @@
 // src/components/Student/ProblemDefinition.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Bot, Lightbulb, ArrowRight, RefreshCw, CheckCircle, Brain } from 'lucide-react';
-
-interface AiTask {
+import { AiTask } from './types';    // instead of redeclaring
+export interface AiTask {
   title: string;
   description: string;
   assignedRole: string;
@@ -11,9 +11,9 @@ interface AiTask {
   tags: string[];
 }
 
-interface AiSuggestions {
-  analysis: string; // The overall analysis text
-  tasks: AiTask[];   // An array of structured tasks
+export interface AiSuggestions {
+  analysis: string;
+  tasks: AiTask[];
 }
 
 interface ProblemDefinitionProps {
@@ -25,48 +25,45 @@ interface ProblemDefinitionProps {
   }) => void;
 }
 
+export interface AiSuggestions { analysis: string; tasks: AiTask[] }
+
 export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps) {
   const [problem, setProblem] = useState('');
   const [ideas, setIdeas] = useState<string[] | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<AiSuggestions | null>(null);
+  const [currentTasks, setCurrentTasks] = useState<AiTask[]>([]); // <-- New state
   const [isAnalyzingIdeas, setIsAnalyzingIdeas] = useState(false);
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerateIdeas = async () => {
     if (!problem.trim()) {
-      setError("Please describe your problem before analyzing.");
+      setError('Please describe your problem before analyzing.');
       return;
     }
     setError(null);
     setIsAnalyzingIdeas(true);
-    setIdeas(null); // Clear previous ideas
-    setSelectedIdea(null); // Clear previous selection
-    setAiSuggestions(null); // Clear previous tasks
+    setIdeas(null);
+    setSelectedIdea(null);
+    setAiSuggestions(null);
 
     try {
       const response = await fetch('http://localhost:5500/api/ideas', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ problem }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      if (data.ideas && Array.isArray(data.ideas)) {
+      if (Array.isArray(data.ideas)) {
         setIdeas(data.ideas);
       } else {
-        setError("AI could not generate ideas. Please try rephrasing your problem.");
+        setError('AI could not generate ideas. Please rephrase your problem.');
         setIdeas([]);
       }
     } catch (err: any) {
-      console.error("Error fetching ideas:", err);
+      console.error('Error fetching ideas:', err);
       setError(`Failed to fetch ideas: ${err.message}. Make sure your backend is running.`);
     } finally {
       setIsAnalyzingIdeas(false);
@@ -74,62 +71,60 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
   };
 
   const handleGenerateTasks = useCallback(async () => {
-    if (!selectedIdea) {
-      // Don't set error here, as this function is called by useEffect
-      // and selectedIdea might be null initially or on problem change.
-      return;
-    }
+    if (!selectedIdea) return;
+
     setError(null);
     setIsGeneratingTasks(true);
-    setAiSuggestions(null); // Clear previous tasks
+    setAiSuggestions(null);
 
     try {
       const response = await fetch('http://localhost:5500/api/tasks', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ problem, idea: selectedIdea }), // Send problem and selected idea
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problem, idea: selectedIdea }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      // IMPORTANT: Backend must return { analysis: string, tasks: AiTask[] }
-      if (data.analysis && data.tasks && Array.isArray(data.tasks)) {
+      if (data.analysis && Array.isArray(data.tasks)) {
         setAiSuggestions(data as AiSuggestions);
       } else {
-        setError("AI could not generate structured tasks for this idea. Please ensure backend returns 'analysis' and 'tasks' (as an array).");
-        setAiSuggestions({ analysis: 'No detailed analysis or tasks generated.', tasks: [] }); // Set to empty to show message
+        setError("AI could not generate structured tasks for this idea. Please ensure backend returns 'analysis' and 'tasks'.");
+        setAiSuggestions({ analysis: '', tasks: [] });
       }
     } catch (err: any) {
-      console.error("Error fetching tasks:", err);
+      console.error('Error fetching tasks:', err);
       setError(`Failed to fetch tasks: ${err.message}. Make sure your backend is running and returning valid JSON.`);
-      setAiSuggestions({ analysis: 'Failed to load analysis or tasks.', tasks: [] });
+      setAiSuggestions({ analysis: '', tasks: [] });
     } finally {
       setIsGeneratingTasks(false);
     }
-  }, [selectedIdea, problem]); // Dependencies for useCallback
+  }, [selectedIdea, problem]);
 
-  // Effect to automatically generate tasks when an idea is selected
+  // Auto-generate tasks when an idea is selected
   useEffect(() => {
-    if (selectedIdea && problem) { // Ensure problem is also present
+    if (selectedIdea && problem) {
       handleGenerateTasks();
     }
-  }, [selectedIdea, problem, handleGenerateTasks]); // Add handleGenerateTasks to dependencies
+  }, [selectedIdea, problem, handleGenerateTasks]);
+
+  // Populate and console.log the full task objects whenever AI suggestions update
+  useEffect(() => {
+    if (aiSuggestions?.tasks) {
+      setCurrentTasks(aiSuggestions.tasks);
+      console.log('Current Tasks:', aiSuggestions.tasks);
+    }
+  }, [aiSuggestions]);
 
   const handleAcceptDistribution = () => {
-    if (problem && selectedIdea && aiSuggestions && aiSuggestions.tasks.length > 0) {
+    if (problem && selectedIdea && aiSuggestions?.tasks.length) {
       onComplete({
         problem,
         selectedIdea,
         tasks: aiSuggestions.tasks,
-        acceptedAiDistribution: true
+        acceptedAiDistribution: true,
       });
     } else {
-      setError("Please ensure a problem is described, an idea is selected, and tasks are successfully generated before proceeding.");
+      setError('Please ensure a problem is described, an idea is selected, and tasks are generated before proceeding.');
     }
   };
 
@@ -167,12 +162,12 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
                   value={problem}
                   onChange={(e) => {
                     setProblem(e.target.value);
-                    setIdeas(null); // Clear ideas if problem changes
+                    setIdeas(null);
                     setSelectedIdea(null);
                     setAiSuggestions(null);
                   }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-base"
-                  placeholder="Describe your problem in detail. For example: 'We need to develop a mobile app that helps students find study groups on campus. Students currently struggle to connect with peers in their courses, leading to isolation and poor academic performance. Our solution should match students based on their courses, study preferences, and availability...'"
+                  placeholder="Describe your problem in detail..."
                 />
               </div>
 
@@ -198,16 +193,13 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
             </div>
           )}
 
-          {/* Conditional Two-Column Layout (for ideas and tasks) */}
-          {/* Show this section if ideas are being analyzed, already generated, or tasks are being generated/shown */}
+          {/* Two-Column Layout for ideas & tasks */}
           {(isAnalyzingIdeas || ideas || aiSuggestions || isGeneratingTasks) && (
             <div className="flex flex-col lg:flex-row lg:space-x-8 space-y-8 lg:space-y-0">
-              {/* Left Column: Ideas Selection */}
+              {/* Left: Ideas */}
               <div className="flex-1 lg:w-1/2">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Suggested Project Ideas:</h3>
-                {isAnalyzingIdeas && (
-                  <p className="text-center text-gray-600">Generating ideas...</p>
-                )}
+                {isAnalyzingIdeas && <p className="text-center text-gray-600">Generating ideas...</p>}
                 {ideas && ideas.length > 0 && (
                   <div className="space-y-4">
                     {ideas.map((idea, index) => (
@@ -218,12 +210,7 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
                             ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
                             : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                         }`}
-                        onClick={() => {
-                          // Select the idea, which will trigger useEffect to generate tasks
-                          setSelectedIdea(idea);
-                          // No need to call handleGenerateTasks directly here now.
-                          // It's handled by useEffect when selectedIdea changes.
-                        }}
+                        onClick={() => setSelectedIdea(idea)}
                       >
                         <h4 className="font-medium text-gray-900 flex items-center">
                           {selectedIdea === idea && <CheckCircle className="h-5 w-5 text-primary-600 mr-2" />}
@@ -234,11 +221,11 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
                   </div>
                 )}
                 {ideas && ideas.length === 0 && !isAnalyzingIdeas && (
-                  <p className="text-center text-gray-600 mt-4">No ideas generated. Please try a different problem description.</p>
+                  <p className="text-center text-gray-600 mt-4">No ideas generated. Please try again.</p>
                 )}
               </div>
 
-              {/* Right Column: AI Analysis and Suggested Tasks */}
+              {/* Right: Tasks */}
               <div className="flex-1 lg:w-1/2 space-y-8">
                 {isGeneratingTasks ? (
                   <div className="p-6 bg-gray-50 rounded-xl flex items-center justify-center text-gray-500 border border-dashed border-gray-300 min-h-[200px]">
@@ -247,48 +234,29 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
                       <p className="text-lg">Bublik is brainstorming tasks...</p>
                     </div>
                   </div>
-                ) : aiSuggestions ? ( // Show analysis and tasks if they exist
+                ) : aiSuggestions ? (
                   <>
-                    {/* AI Analysis */}
-                    <div className="bg-gradient-to-r from-accent-50 to-accent-100 rounded-xl p-6">
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-accent-600 rounded-full flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-accent-900 mb-2">Bublik's Analysis</h3>
-                          <p className="text-accent-800">{aiSuggestions?.analysis || 'No analysis available.'}</p>
-                          {selectedIdea && (
-                            <p className="text-accent-700 text-sm mt-2">
-                              **Selected Idea:** "{selectedIdea}"
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Suggested Tasks */}
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900 mb-4">Suggested Task Distribution</h3>
                       <div className="grid gap-4">
-                        {aiSuggestions?.tasks.length === 0 && (
+                        {aiSuggestions.tasks.length === 0 && (
                           <p className="text-center text-gray-600">No tasks generated for this idea.</p>
                         )}
-                        {aiSuggestions?.tasks.map((task: AiTask, index: number) => (
-                          <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        {aiSuggestions.tasks.map((task, idx) => (
+                          <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-3 mb-2">
                                   <h4 className="font-medium text-gray-900">{task.title}</h4>
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    task.priority === 'high'
-                                      ? 'bg-error-100 text-error-800'
-                                      : task.priority === 'medium'
+                                  <span
+                                    className={`px-2 py-1 text-xs rounded-full ${
+                                      task.priority === 'high'
+                                        ? 'bg-error-100 text-error-800'
+                                        : task.priority === 'medium'
                                         ? 'bg-warning-100 text-warning-800'
                                         : 'bg-success-100 text-success-800'
-                                  }`}>
+                                    }`}
+                                  >
                                     {task.priority} priority
                                   </span>
                                 </div>
@@ -297,8 +265,8 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
                                   <span>👤 {task.assignedRole}</span>
                                   <span>⏱️ {task.estimatedDays} days</span>
                                   <div className="flex space-x-1">
-                                    {task.tags.map((tag: string, tagIndex: number) => (
-                                      <span key={tagIndex} className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                                    {task.tags.map((tag, i) => (
+                                      <span key={i} className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
                                         {tag}
                                       </span>
                                     ))}
@@ -311,33 +279,32 @@ export default function ProblemDefinition({ onComplete }: ProblemDefinitionProps
                       </div>
                     </div>
 
-                    {/* Action buttons at the bottom of the right column */}
+                    {/* Action Buttons */}
                     <div className="flex justify-center space-x-4">
-                        <button
-                            onClick={() => {
-                                // Reset to idea selection step to choose another idea or re-generate
-                                setAiSuggestions(null); // Clear tasks to show the right column placeholder again
-                                setSelectedIdea(null); // Clear selected idea to go back to idea selection state
-                            }}
-                            className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            Change Idea / Regenerate Tasks
-                        </button>
-                        <button
-                            onClick={handleAcceptDistribution}
-                            className="px-8 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg hover:from-primary-700 hover:to-secondary-700 transition-all flex items-center font-medium"
-                            disabled={!aiSuggestions || aiSuggestions.tasks.length === 0}
-                        >
-                            Accept & Start Project
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                        </button>
+                      <button
+                        onClick={() => {
+                          setAiSuggestions(null);
+                          setSelectedIdea(null);
+                        }}
+                        className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        Change Idea / Regenerate Tasks
+                      </button>
+                      <button
+                        onClick={handleAcceptDistribution}
+                        disabled={!aiSuggestions.tasks.length}
+                        className="px-8 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg hover:from-primary-700 hover:to-secondary-700 transition-all flex items-center font-medium disabled:opacity-50"
+                      >
+                        Accept & Start Project
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </button>
                     </div>
                   </>
-                ) : ( // Default placeholder for the right column when no tasks are loaded/generating
+                ) : (
                   <div className="p-6 bg-gray-50 rounded-xl flex items-center justify-center text-gray-500 border border-dashed border-gray-300 min-h-[200px]">
                     <div className="text-center">
                       <Lightbulb className="h-10 w-10 mx-auto mb-3" />
-                      <p className="text-lg">Select an idea from the left to automatically generate tasks.</p>
+                      <p className="text-lg">Select an idea on the left to generate tasks.</p>
                     </div>
                   </div>
                 )}

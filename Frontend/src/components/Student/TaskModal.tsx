@@ -1,11 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, User, Flag, Hash } from 'lucide-react';
+// src/components/Student/TaskModal.tsx
 
+import React, { useState, useEffect, FormEvent } from 'react';
+import { X } from 'lucide-react';
+
+// Simplified Task interface for the form
+interface TaskData {
+  title: string;
+  description: string;
+  assignedTo: string;
+  priority: 'low' | 'medium' | 'high';
+  dueDate: string; // Use string for input type='date'
+  points: number;
+  tags: string; // Use a single string for easier input
+}
+
+// Re-import the main Task interface to match Dashboard's
 interface Task {
   id: string;
   title: string;
   description: string;
   assignedTo: string;
+  assignedToRole?: string;    // <— make this optional
   status: 'todo' | 'in-progress' | 'done';
   priority: 'low' | 'medium' | 'high';
   dueDate: Date;
@@ -13,304 +28,144 @@ interface Task {
   points: number;
   tags: string[];
 }
-
-type FormData = {
-  title: string;
-  description: string;
-  assignedTo: string;
-  priority: Task['priority'];
-  dueDate: string;       // storing as ISO date string for the <input type="date" />
-  points: number;
-  tags: string[];
-  status: Task['status'];
-};
-
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: Omit<Task, 'id' | 'statusColor'>) => void;
-  task?: Task | null;
+  // Allow assignedToRole to come through if provided
+  onSave: (
+    data: Omit<Task, 'id' | 'status' | 'statusColor'> & { assignedToRole?: string }
+  ) => void;
+  task: Task | null;
+  assignableUsers: string[];
 }
 
-export default function TaskModal({
-  isOpen,
-  onClose,
-  onSave,
-  task
-}: TaskModalProps) {
-  const [formData, setFormData] = useState<FormData>({
-    title: '',
-    description: '',
-    assignedTo: '',
-    priority: 'medium',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0],
-    points: 10,
-    tags: [],
-    status: 'todo'
-  });
+const DEFAULT_FORM_STATE: TaskData = {
+  title: '',
+  description: '',
+  assignedTo: '',
+  priority: 'medium',
+  dueDate: new Date().toISOString().split('T')[0], //YYYY-MM-DD
+  points: 1,
+  tags: '',
+};
 
-  const [tagInput, setTagInput] = useState('');
+export default function TaskModal({ isOpen, onClose, onSave, task, assignableUsers }: TaskModalProps) {
+  const [formData, setFormData] = useState<TaskData>(DEFAULT_FORM_STATE);
 
   useEffect(() => {
-    if (task) {
-      setFormData({
-        title: task.title,
-        description: task.description,
-        assignedTo: task.assignedTo,
-        priority: task.priority,
-        dueDate: task.dueDate.toISOString().split('T')[0],
-        points: task.points,
-        tags: task.tags,
-        status: task.status
-      });
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        assignedTo: '',
-        priority: 'medium',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0],
-        points: 10,
-        tags: [],
-        status: 'todo'
-      });
+    if (isOpen) {
+      if (task) {
+        // If editing, populate form with existing task data
+        setFormData({
+          title: task.title,
+          description: task.description,
+          assignedTo: task.assignedTo,
+          priority: task.priority,
+          dueDate: task.dueDate.toISOString().split('T')[0],
+          points: task.points,
+          tags: task.tags.join(', '),
+        });
+      } else {
+        // If creating new, reset to default state
+        setFormData(DEFAULT_FORM_STATE);
+        // Set default assignedTo to the first available user if editing and no assignedTo is set
+        // Or if creating a new task, default to the first user if available
+        if (assignableUsers.length > 0) {
+            setFormData(prev => ({ ...prev, assignedTo: assignableUsers[0] }));
+        }
+      }
     }
-  }, [task, isOpen]);
+  }, [isOpen, task, assignableUsers]); // Add assignableUsers to dependencies
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: name === 'points' ? parseInt(value) : value }));
+  };
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      dueDate: new Date(formData.dueDate)
-    });
-    onClose();
-  };
+onSave({
+  ...formData,
+  dueDate: new Date(formData.dueDate),
+  tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+  // you can optionally pass assignedToRole here, but Dashboard will default if missing
+});
 
-  const addTag = () => {
-    const tag = tagInput.trim();
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
-      setTagInput('');
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addTag();
-    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {task ? 'Edit Task' : 'Create New Task'}
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="h-5 w-5 text-gray-500" />
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center">
+      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg m-4 z-50">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">{task ? 'Edit Task' : 'Create New Task'}</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+            <X size={24} />
           </button>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Task Title *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.title}
-              onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="Enter task title..."
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"
-              placeholder="Describe the task in detail..."
-            />
-          </div>
-
-          {/* Row 1: Assigned To & Priority */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="h-4 w-4 inline mr-1" />
-                Assigned To
-              </label>
-              <select
-                value={formData.assignedTo}
-                onChange={e => setFormData(prev => ({ ...prev, assignedTo: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="">Select assignee...</option>
-                <option value="Frontend Developer">Frontend Developer</option>
-                <option value="Backend Developer">Backend Developer</option>
-                <option value="UI/UX Designer">UI/UX Designer</option>
-                <option value="Research Analyst">Research Analyst</option>
-                <option value="Project Manager">Project Manager</option>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+              <input type="text" name="title" value={formData.title} onChange={handleChange} required className="mt-1 w-full border-gray-300 rounded-md shadow-sm" />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+              <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="mt-1 w-full border-gray-300 rounded-md shadow-sm" />
+            </div>
+
+            {/* Assigned To Dropdown */}
+            <div>
+              <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700">Assign To</label>
+              <select name="assignedTo" value={formData.assignedTo} onChange={handleChange} required className="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                <option value="" disabled>Select a user</option>
+                {assignableUsers.map(user => (
+                  <option key={user} value={user}>{user}</option>
+                ))}
               </select>
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* Priority */}
+              <div>
+                <label htmlFor="priority" className="block text-sm font-medium text-gray-700">Priority</label>
+                <select name="priority" value={formData.priority} onChange={handleChange} className="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
 
+              {/* Points */}
+              <div>
+                <label htmlFor="points" className="block text-sm font-medium text-gray-700">Points</label>
+                <input type="number" name="points" value={formData.points} min="0" onChange={handleChange} className="mt-1 w-full border-gray-300 rounded-md shadow-sm" />
+              </div>
+            </div>
+
+            {/* Due Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Flag className="h-4 w-4 inline mr-1" />
-                Priority
-              </label>
-              <select
-                value={formData.priority}
-                onChange={e =>
-                  setFormData(prev => ({
-                    ...prev,
-                    priority: e.target.value as Task['priority']
-                  }))
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="low">Low Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="high">High Priority</option>
-              </select>
+              <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700">Due Date</label>
+              <input type="date" name="dueDate" value={formData.dueDate} onChange={handleChange} required className="mt-1 w-full border-gray-300 rounded-md shadow-sm" />
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label htmlFor="tags" className="block text-sm font-medium text-gray-700">Tags (comma-separated)</label>
+              <input type="text" name="tags" value={formData.tags} onChange={handleChange} className="mt-1 w-full border-gray-300 rounded-md shadow-sm" />
             </div>
           </div>
 
-          {/* Row 2: Due Date & Points */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="h-4 w-4 inline mr-1" />
-                Due Date *
-              </label>
-              <input
-                type="date"
-                required
-                value={formData.dueDate}
-                onChange={e => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Hash className="h-4 w-4 inline mr-1" />
-                Points
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={formData.points}
-                onChange={e =>
-                  setFormData(prev => ({ ...prev, points: parseInt(e.target.value, 10) || 10 }))
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags
-            </label>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {formData.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="ml-2 hover:text-primary-600"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={e => setTagInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Add a tag..."
-              />
-              <button
-                type="button"
-                onClick={addTag}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-
-          {/* Status (only when editing) */}
-          {task && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={formData.status}
-                onChange={e =>
-                  setFormData(prev => ({
-                    ...prev,
-                    status: e.target.value as Task['status']
-                  }))
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="todo">To Do</option>
-                <option value="in-progress">In Progress</option>
-                <option value="done">Done</option>
-              </select>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-            >
+          <div className="mt-6 flex justify-end space-x-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
               Cancel
             </button>
-            <button
-              type="submit"
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-            >
-              {task ? 'Update Task' : 'Create Task'}
+            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
+              {task ? 'Save Changes' : 'Create Task'}
             </button>
           </div>
         </form>

@@ -115,6 +115,14 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
       // Before completing, derive the 'roles' array from the unique assigned member roles
       const finalRoles = Array.from(new Set(projectData.memberAssignments.map(a => a.role).filter(Boolean)));
       
+      // Find and print the role assigned to 'You'
+      const yourRoleAssignment = projectData.memberAssignments.find(assignment => assignment.memberEmail === 'You');
+      if (yourRoleAssignment) {
+        console.log(`Your current assigned role is: ${yourRoleAssignment.role}`);
+      } else {
+        console.log("Could not find an assigned role for 'You'.");
+      }
+
       // The 'members' array passed to onComplete should now contain the 4 invited emails.
       // The 'memberAssignments' will include 'You' + the 4 invited.
       onComplete({

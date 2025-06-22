@@ -1,7 +1,8 @@
+// src/components/Student/ChatList.tsx
 import React from 'react';
 import { MessageCircle, Users, Clock } from 'lucide-react';
 
-interface ChatGroup {
+export interface ChatGroup {
   id: string;
   name: string;
   participants: string[];
@@ -54,13 +55,12 @@ export default function ChatList({ groups, onSelectGroup, userRole }: ChatListPr
             <p className="text-gray-600">
               {userRole === 'mentor' 
                 ? 'You haven\'t been assigned to any groups yet.' 
-                : 'Your team chat will appear here once it\'s set up.'
-              }
+                : 'Your team chat will appear here once it\'s set up.'}
             </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {groups.map((group) => (
+            {groups.map(group => (
               <div
                 key={group.id}
                 onClick={() => onSelectGroup(group)}

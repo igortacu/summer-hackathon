@@ -102,33 +102,25 @@ def load_convo():
 # 5) Chat helper
 # ———————————————
 def chat_with_context(user_text: str) -> str:
-    project_name, roles_dict = load_project_and_roles()
     # turn the dict into a simple "Name: Role, ..." string
-    roles_str = ", ".join(f"{n}: {r}" for n, r in roles_dict.items())
 
     system_msg = {
         "role": "system",
         "content": (
-            f"You are a project assistant for '{project_name}'.\n"
-            f"Team members & roles: {roles_str}\n\n"
             "When asked for creative ideas, also propose a task repartition "
             "based on roles. Remember the entire conversation."
         )
     }
 
-    history = load_convo()
-    history.append({"role": "user", "content": user_text})
-    add_convo("user", user_text)
 
     resp = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=[system_msg] + history,
+        messages=[system_msg],
         max_tokens=500,
         temperature=0.8
     )
 
     assistant_text = resp.choices[0].message.content.strip()
-    add_convo("assistant", assistant_text)
     return assistant_text
 
 # ———————————————

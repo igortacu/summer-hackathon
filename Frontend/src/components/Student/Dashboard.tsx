@@ -38,23 +38,25 @@ interface DashboardProps {
     projectName: string;
     description?: string;
     members: string[]; // emails
-    roles: string[];   // roles list from setup (e.g., ['Developer', 'Designer'])
+    roles: string[];    // roles list from setup (e.g., ['Developer', 'Designer'])
   };
   problemData: {
     tasks: AiTask[];
     assignments?: Record<number, string>;
   };
   userEmail: string;
+  // Add userRole here
+  userRole: string; // This line fixes the error
 }
 
 export default function Dashboard({
   projectData,
   problemData,
-  userEmail
+  userEmail,
+  userRole // Destructure userRole here
 }: DashboardProps) {
 
   const myDisplayName = useMemo(() => {
-    // Assuming userEmail is something like "john.doe@example.com" and you want "You"
     return 'You';
   }, [userEmail]);
 
@@ -70,41 +72,165 @@ export default function Dashboard({
     if (!dueDate) return 'green';
     const diffDays = (dueDate.getTime() - Date.now()) / (1000 * 3600 * 24);
     if (diffDays < 0) return 'red';
-    // Tasks due within 24 hours are "yellow"
     if (diffDays < 1) return 'yellow';
     return 'green';
   }
 
   const [boardTasks, setBoardTasks] = useState<Task[]>(() => {
-    const initialTasks = problemData.tasks || [];
-    const initialAssignments = problemData.assignments || {};
+    const initialTasksFromProps = problemData.tasks || [];
+    const initialAssignmentsFromProps = problemData.assignments || {};
 
-    return initialTasks.map((t, i) => {
-      // Calculate dueDate based on current date + estimatedDays
-      const due = new Date();
-      due.setDate(due.getDate() + t.estimatedDays); // Sets date relative to current date
+    const predefinedTasks: Task[] = [
+      {
+        id: '1',
+        title: 'Design Homepage Layout',
+        description: 'Create a modern and user-friendly layout for the website homepage.',
+        assignedTo: myDisplayName,
+        status: 'in-progress',
+        priority: 'high',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 3); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 3); return d; })()),
+        points: 5,
+        tags: ['design', 'frontend']
+      },
+      {
+        id: '2',
+        title: 'Develop User Authentication',
+        description: 'Implement secure user registration and login functionality.',
+        assignedTo: 'Alice Johnson',
+        status: 'todo',
+        priority: 'high',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 7); return d; })()),
+        points: 8,
+        tags: ['backend', 'security']
+      },
+      {
+        id: '3',
+        title: 'Set up Database Schema',
+        description: 'Define and implement the database structure for the project.',
+        assignedTo: myDisplayName,
+        status: 'todo',
+        priority: 'medium',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 5); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 5); return d; })()),
+        points: 6,
+        tags: ['backend', 'database']
+      },
+      {
+        id: '4',
+        title: 'Write API Documentation',
+        description: 'Document all public API endpoints with examples.',
+        assignedTo: 'Bob Williams',
+        status: 'in-progress',
+        priority: 'low',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 10); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 10); return d; })()),
+        points: 3,
+        tags: ['documentation', 'api']
+      },
+      {
+        id: '5',
+        title: 'Conduct User Acceptance Testing (UAT)',
+        description: 'Perform testing with end-users to gather feedback.',
+        assignedTo: 'Charlie Brown',
+        status: 'done',
+        priority: 'medium',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() - 2); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() - 2); return d; })()),
+        points: 4,
+        tags: ['qa', 'testing']
+      },
+      {
+        id: '6',
+        title: 'Integrate Payment Gateway',
+        description: 'Set up Stripe integration for secure payments.',
+        assignedTo: myDisplayName,
+        status: 'todo',
+        priority: 'high',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 14); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 14); return d; })()),
+        points: 10,
+        tags: ['backend', 'payments']
+      },
+      {
+        id: '7',
+        title: 'Optimize Image Loading',
+        description: 'Implement lazy loading and optimize image sizes for faster performance.',
+        assignedTo: 'Alice Johnson',
+        status: 'in-progress',
+        priority: 'medium',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 6); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 6); return d; })()),
+        points: 4,
+        tags: ['frontend', 'performance']
+      },
+      {
+        id: '8',
+        title: 'Review Codebase',
+        description: 'Conduct a thorough review of existing code for quality and best practices.',
+        assignedTo: 'Bob Williams',
+        status: 'todo',
+        priority: 'low',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 20); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 20); return d; })()),
+        points: 7,
+        tags: ['development', 'review']
+      },
+      {
+        id: '9',
+        title: 'Prepare Project Presentation',
+        description: 'Create slides and talking points for the end-of-sprint presentation.',
+        assignedTo: myDisplayName,
+        status: 'done',
+        priority: 'medium',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() - 5); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() - 5); return d; })()),
+        points: 3,
+        tags: ['management', 'presentation']
+      },
+      {
+        id: '10',
+        title: 'Fix Critical Bug in Login',
+        description: 'Address the reported bug where users cannot log in with correct credentials.',
+        assignedTo: myDisplayName,
+        status: 'in-progress',
+        priority: 'high',
+        dueDate: (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d; })(),
+        statusColor: getStatusColor((() => { const d = new Date(); d.setDate(d.getDate() + 1); return d; })()),
+        points: 5,
+        tags: ['bug', 'urgent']
+      },
+    ];
 
-      const assignedUser = initialAssignments[i];
+    const combinedTasks = [
+      ...initialTasksFromProps.map((t, i) => {
+        const due = new Date();
+        due.setDate(due.getDate() + t.estimatedDays);
+        const assignedUser = initialAssignmentsFromProps[i];
+        const assignedDisplayName = assignedUser
+          ? (parseEmailName(assignedUser) === parseEmailName(userEmail) ? 'You' : parseEmailName(assignedUser))
+          : 'Unassigned';
 
-      // Determine if the assigned user is "You" based on parsing their email/name
-      // This is crucial for the "You" display on the card
-      const assignedDisplayName = assignedUser
-        ? (parseEmailName(assignedUser) === parseEmailName(userEmail) ? 'You' : parseEmailName(assignedUser))
-        : 'Unassigned';
+        return {
+          id: `ai-${i}`,
+          title: t.title,
+          description: t.description,
+          assignedTo: assignedDisplayName,
+          status: 'todo' as 'todo',
+          priority: t.priority,
+          dueDate: due,
+          statusColor: getStatusColor(due),
+          points: t.estimatedDays,
+          tags: t.tags
+        };
+      }),
+      ...predefinedTasks
+    ];
 
-      return {
-        id: String(i),
-        title: t.title,
-        description: t.description,
-        assignedTo: assignedDisplayName, // Use the display name "You" or actual member name
-        status: 'todo', // Default status for new tasks
-        priority: t.priority,
-        dueDate: due,
-        statusColor: getStatusColor(due),
-        points: t.estimatedDays, // Using estimatedDays as points
-        tags: t.tags
-      };
-    });
+    const uniqueTasks = Array.from(new Map(combinedTasks.map(task => [task.id, task])).values());
+
+    return uniqueTasks;
   });
 
   const totalTasks = boardTasks.length;
@@ -115,7 +241,6 @@ export default function Dashboard({
   const totalPoints = boardTasks.reduce((sum, t) => sum + t.points, 0);
 
   const memberPoints: Record<string, number> = {};
-  // Include "You" in the list of possible assignees for stats calculation
   const allPossibleAssignees = ['You', ...projectData.members.map(parseEmailName)];
   allPossibleAssignees.forEach(assignee => {
     memberPoints[assignee] = 0;
@@ -146,7 +271,6 @@ export default function Dashboard({
     return matchSearch && matchStatus;
   });
 
-  // Filter tasks to show only those assigned to "You" in the Dashboard
   const myTasks = filtered.filter(t => t.assignedTo === myDisplayName);
 
 
@@ -164,11 +288,11 @@ export default function Dashboard({
         prev.map(t =>
           t.id === editingTask.id
             ? {
-                ...t,
-                ...data,
-                status: t.status, // Preserve the existing status for edited tasks
-                statusColor: getStatusColor(data.dueDate)
-              }
+              ...t,
+              ...data,
+              status: t.status,
+              statusColor: getStatusColor(data.dueDate)
+            }
             : t
         )
       );
@@ -176,7 +300,7 @@ export default function Dashboard({
       const newTask: Task = {
         ...data,
         id: Date.now().toString(),
-        status: 'todo', // Always 'todo' for newly created tasks
+        status: 'todo',
         statusColor: getStatusColor(data.dueDate)
       };
       setBoardTasks(prev => [...prev, newTask]);
@@ -193,13 +317,10 @@ export default function Dashboard({
     );
   };
 
-  // Generate the list of assignable users for the TaskModal
   const assignableUsers = useMemo(() => {
     const membersAsDisplayNames = projectData.members.map(memberEmail => {
-      // Use myDisplayName (which is 'You') for the current user's email, otherwise parse the name
       return parseEmailName(memberEmail) === parseEmailName(userEmail) ? myDisplayName : parseEmailName(memberEmail);
     });
-    // Add "Unassigned" as an option and remove any duplicate display names
     const uniqueAssignableUsers = Array.from(new Set(['Unassigned', ...membersAsDisplayNames]));
     return uniqueAssignableUsers;
   }, [projectData.members, userEmail, myDisplayName]);
@@ -207,7 +328,6 @@ export default function Dashboard({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-3xl font-bold text-gray-900">{projectData.projectName}</h1>
@@ -221,12 +341,10 @@ export default function Dashboard({
         </button>
       </div>
 
-      {/* Stats Cards */}
       <div className="mb-8">
         <StatsCards stats={stats} />
       </div>
 
-      {/* Filters */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center flex-1">
           <div className="relative flex-1 mb-4 sm:mb-0 sm:mr-4">
@@ -258,17 +376,14 @@ export default function Dashboard({
         </button>
       </div>
 
-      {/* Optional Advanced Filters */}
       {showFilters && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">{/* advanced filters */}</div>
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200"></div>
       )}
 
-      {/* Kanban Board - Now displays only "My Tasks" (tasks assigned to 'You') */}
       <div className="overflow-x-auto">
         <KanbanBoard tasks={myTasks} onTaskUpdate={handleTaskUpdate} />
       </div>
 
-      {/* Task Modal */}
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
