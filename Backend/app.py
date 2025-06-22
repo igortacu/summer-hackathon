@@ -22,7 +22,7 @@ app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", True)
 def chatbot():
     """
     Placeholder for chatbot integration.
-    This route can be used to handle chatbot requests.
+    This route can be used to handle chatbot requests.`
     """
     data = request.get_json()
     if not data:
