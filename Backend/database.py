@@ -20,11 +20,13 @@ class User:
         self.role = role
         self.password = password
         self.project_name = project_name
-        self.github_url = github_url 
+        self.github_url = github_url
 
     def __iter__(self):
         for key in self.__dict__:
             yield key, getattr(self, key)
+
+
 class Task:
     def __init__(
         self,
@@ -36,13 +38,13 @@ class Task:
         priority,
         due_date,
     ):
-       self.id = id
-       self.title = title
-       self.description = description
-       self.assigned_to = assigned_to
-       self.status = status
-       self.priority = priority
-       self.due_date = due_date
+        self.id = id
+        self.title = title
+        self.description = description
+        self.assigned_to = assigned_to
+        self.status = status
+        self.priority = priority
+        self.due_date = due_date
 
     def __iter__(self):
         for key in self.__dict__:
@@ -55,7 +57,7 @@ cursor = conn.cursor()
 
 # 2. (Development only) Drop the old users table if it exists
 #    Comment out the next line if you want to preserve existing data.
-cursor.execute("DROP TABLE IF EXISTS users")
+# cursor.execute("DROP TABLE IF EXISTS users")
 
 # 3. Create the users table with the correct schema, including github_url
 cursor.execute(
@@ -83,7 +85,8 @@ cursor.execute(
         assigned_to TEXT NOT NULL,
         status TEXT NOT NULL,
         priority TEXT NOT NULL,
-        due_date DATE NOT NULL
+        due_date DATE NOT NULL,
+        hash TEXT NOT NULL UNIQUE,
     )
 """
 )
@@ -122,16 +125,27 @@ def sign_in(user: User):
         (
             user.name,
             user.academic_group,
-            pbl_group_number,
+            user.pbl_group_number,
             user.email,
             user.role,
             user.password,
             user.project_name,
-            user.github_url
+            user.github_url,
         ),
     )
     conn.commit()
     print(f"User '{user.name}' signed in and added to database.")
+
+
+def log_in(email: str, password: str):
+    """
+    Checks if the user with the given email and password exists in the database.
+    """
+    cursor.execute(
+        "SELECT 1 FROM users WHERE email = ? AND password = ?", (email, password)
+    )
+    user = cursor.fetchone()
+    return user
 
 
 # 5. New helper: fetch all GitHub URLs for a given PBL group number
@@ -158,8 +172,9 @@ def new_task(task: Task):
             assigned_to,
             status,
             priority,
-            due_date
-        ) VALUES (?, ?, ?, ?, ?, ?)
+            due_date,
+            hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
             task.title,
@@ -168,17 +183,17 @@ def new_task(task: Task):
             task.status,
             task.priority,
             task.due_date,
+            hash(task.title + task.description + task.assigned_to + task.status + task.priority)
         ),
     )
     conn.commit()
+
 
 def get_tasks():
     """
     Returns a list of tasks assigned to the user with the given id.
     """
-    cursor.execute(
-        "SELECT * FROM tasks"
-    )
+    cursor.execute("SELECT * FROM tasks")
     return [Task(*row) for row in cursor.fetchall()]
 
 
@@ -190,7 +205,7 @@ if __name__ == "main":
     print(f"GitHub URLs for PBL group {pbl_group_number}: {links}")
 
     conn.close()
-
+1   
 
 def init_convo_db():
 
@@ -198,7 +213,7 @@ def init_convo_db():
     c = conn.cursor()
 
     c.execute(
-    """
+        """
         CREATE TABLE IF NOT EXISTS convo (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             role TEXT NOT NULL,
