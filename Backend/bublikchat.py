@@ -23,6 +23,28 @@ CONVO_DB_PATH = "bublik_convo.db"  # our chat history
 # ———————————————
 # 3) Read project + roles from your existing users table
 # ———————————————
+
+def get_answer(question: str) -> str:
+    """
+    Sends the user's question to the OpenAI chat endpoint and returns the assistant's answer.
+    """
+    system_prompt = (
+        "You are a helpful assistant. "
+        "Answer the user’s question concisely and accurately."
+    )
+    resp = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": question}
+        ],
+        max_tokens=500,
+        temperature=0.7
+    )
+    return resp.choices[0].message.content.strip()
+
+
+
 def load_project_and_roles():
     """
     Connect to your existing `my_database.db` and pull:
