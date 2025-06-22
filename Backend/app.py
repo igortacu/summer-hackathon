@@ -16,8 +16,6 @@ CORS(app)
 # Load configuration
 app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", True)
 
-# TODO: CHATBOT INTEGRATION
-
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
     """
