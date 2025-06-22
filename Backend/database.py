@@ -76,8 +76,7 @@ cursor.execute(
 """
 )
 
-cursor.execute(
-    """
+cursor.execute( """
     CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -86,9 +85,9 @@ cursor.execute(
         status TEXT NOT NULL,
         priority TEXT NOT NULL,
         due_date DATE NOT NULL,
-        hash TEXT NOT NULL UNIQUE,
+        hash TEXT NOT NULL UNIQUE
     )
-"""
+    """
 )
 
 conn.commit()
@@ -183,7 +182,13 @@ def new_task(task: Task):
             task.status,
             task.priority,
             task.due_date,
-            hash(task.title + task.description + task.assigned_to + task.status + task.priority)
+            hash(
+                task.title
+                + task.description
+                + task.assigned_to
+                + task.status
+                + task.priority
+            ),
         ),
     )
     conn.commit()
@@ -205,7 +210,8 @@ if __name__ == "main":
     print(f"GitHub URLs for PBL group {pbl_group_number}: {links}")
 
     conn.close()
-1   
+1
+
 
 def init_convo_db():
 
