@@ -30,7 +30,7 @@ def chatbot():
     user_message = data.get("message")
 
     # Call the get_answer function from your other file
-    ai_answer = bublikchat.get_answer(user_message)
+    ai_answer = bublikchat.chat_with_context(user_message)
 
     # Return the real AI response in a JSON object
     # The frontend will look for this "answer" key.
