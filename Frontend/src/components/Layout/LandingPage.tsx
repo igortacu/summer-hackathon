@@ -24,22 +24,10 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
   return (
     <div className="relative overflow-hidden text-[#6F4518]">
       {/* Animated Background Blobs */}
-      <motion.div
-        className="absolute top-0 left-0 w-96 h-96 bg-[#BC8A5F] rounded-full mix-blend-multiply filter blur-3xl"
-        variants={blobVariants}
-        initial="hidden"
-        animate="visible"
-      />
-      <motion.div
-        className="absolute bottom-0 right-0 w-80 h-80 bg-[#A47148] rounded-full mix-blend-multiply filter blur-3xl"
-        variants={blobVariants}
-        initial="hidden"
-        animate="visible"
-      />
 
       {/* NAVBAR */}
       <motion.nav
-        className="fixed w-full bg-white/80 backdrop-blur-md shadow z-20"
+        className="fixed w-full bg-white backdrop-blur-md shadow z-20"
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -77,7 +65,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
             >
-              Transformă proiectele în experiențe de succes
+              Build. Learn. Link. Welcome to Bublink
             </motion.h1>
             <motion.p
               className="text-lg lg:text-xl text-[#8B5E34] max-w-md"
@@ -85,7 +73,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.6 }}
             >
-              Colaborați cu alocare AI, analytics live și micro-animări de feedback în timp real.
+              Collaborate with AI-driven allocation, live analytics, and micro-animations for real-time feedback.
             </motion.p>
             <div className="flex flex-wrap gap-4">
               <motion.button
@@ -94,7 +82,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                Începe Gratuit
+                Start Free
               </motion.button>
               <motion.button
                 onClick={onLogin}
@@ -102,7 +90,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                 whileHover={{ scale: 1.05, backgroundColor: 'rgba(196,133,57,0.1)' }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                Află Mai Mult
+                Read More
               </motion.button>
             </div>
           </motion.div>
@@ -122,6 +110,8 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
               muted
               playsInline
               className="w-full bg-transparent"
+              disablePictureInPicture
+              disableRemotePlayback
             />
             {/* Floating Icon */}
             <motion.div
@@ -129,7 +119,6 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 2 }}
             >
-              <Zap size={32} className="text-[#A47148]" />
             </motion.div>
           </motion.div>
         </div>

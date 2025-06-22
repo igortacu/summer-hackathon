@@ -1,4 +1,3 @@
-// src/App.tsx
 import { useState, useEffect } from 'react';
 import AuthForm from './components/Auth/AuthForm';
 import RoleSelection from './components/Auth/RoleSelection';
@@ -241,8 +240,8 @@ export default function App() {
                   <Dashboard
                     projectData={projectData}
                     problemData={problemData}
-                    userEmail={user.email} // FIX: Pass user.email here
-                    userRole={user.role} // Pass user.role as required by DashboardProps
+                    userEmail={user.email}
+                    // Removed: userRole={user.role} // This prop is not expected by Dashboard
                   />
                 )}
                 {activeTab === 'projects' && (
@@ -257,7 +256,7 @@ export default function App() {
                 {activeTab === 'tasks' && (
                   <MyTasks
                     tasks={tasksForMyTasks}
-                    userRole={projectData.roles[0]}
+                    userRole={projectData.roles[0]} // Assuming projectData.roles[0] is the user's role in the project context
                   />
                 )}
                 {activeTab === 'stats' && <Statistics />}

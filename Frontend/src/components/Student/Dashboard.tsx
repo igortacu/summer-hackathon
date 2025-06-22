@@ -1,13 +1,13 @@
 // src/components/Student/Dashboard.tsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Plus,
   Filter,
   Search
 } from 'lucide-react';
-import KanbanBoard from './KanbanBoard';
+import KanbanBoard from './KanbanBoard'; // Uses your KanbanBoard
 import StatsCards from './StatsCards';
-import TaskModal from './TaskModal';
+import TaskModal from './TaskModal'; // Ensure TaskModal is correctly imported
 import { parseEmailName } from '../../utils/parseEmailName';
 
 interface AiTask {
@@ -19,6 +19,7 @@ interface AiTask {
   tags: string[];
 }
 
+// Ensure this Task interface is consistent across Dashboard, KanbanBoard, and TaskCard
 interface Task {
   id: string;
   title: string;
@@ -37,20 +38,27 @@ interface DashboardProps {
     projectName: string;
     description?: string;
     members: string[]; // emails
-    roles: string[];   // yourRole + each member’s role
+    roles: string[];   // roles list from setup (e.g., ['Developer', 'Designer'])
   };
   problemData: {
     tasks: AiTask[];
+    assignments?: Record<number, string>;
   };
-  userRole: string;
+  userEmail: string;
 }
 
 export default function Dashboard({
   projectData,
   problemData,
-  userRole
+  userEmail
 }: DashboardProps) {
-  // UI state
+
+  const myDisplayName = useMemo(() => {
+    // Assuming userEmail is something like "john.doe@example.com" and you want "You"
+    return 'You';
+  }, [userEmail]);
+
+
   const [filterStatus, setFilterStatus] =
     useState<'all' | 'todo' | 'in-progress' | 'done'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,55 +66,65 @@ export default function Dashboard({
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  // Helpers
   function getStatusColor(dueDate?: Date): 'green' | 'yellow' | 'red' {
     if (!dueDate) return 'green';
     const diffDays = (dueDate.getTime() - Date.now()) / (1000 * 3600 * 24);
     if (diffDays < 0) return 'red';
+    // Tasks due within 24 hours are "yellow"
     if (diffDays < 1) return 'yellow';
     return 'green';
   }
 
-  // Initialize boardTasks from AI analysis
-  const [boardTasks, setBoardTasks] = useState<Task[]>(() =>
-    (problemData.tasks || []).map((t, i) => {
-      const due = new Date(Date.now() + t.estimatedDays * 24 * 3600 * 1000);
+  const [boardTasks, setBoardTasks] = useState<Task[]>(() => {
+    const initialTasks = problemData.tasks || [];
+    const initialAssignments = problemData.assignments || {};
+
+    return initialTasks.map((t, i) => {
+      // Calculate dueDate based on current date + estimatedDays
+      const due = new Date();
+      due.setDate(due.getDate() + t.estimatedDays); // Sets date relative to current date
+
+      const assignedUser = initialAssignments[i];
+
+      // Determine if the assigned user is "You" based on parsing their email/name
+      // This is crucial for the "You" display on the card
+      const assignedDisplayName = assignedUser
+        ? (parseEmailName(assignedUser) === parseEmailName(userEmail) ? 'You' : parseEmailName(assignedUser))
+        : 'Unassigned';
+
       return {
         id: String(i),
         title: t.title,
         description: t.description,
-        assignedTo: t.assignedRole,
-        status: 'todo',
+        assignedTo: assignedDisplayName, // Use the display name "You" or actual member name
+        status: 'todo', // Default status for new tasks
         priority: t.priority,
         dueDate: due,
         statusColor: getStatusColor(due),
-        points: t.estimatedDays,
+        points: t.estimatedDays, // Using estimatedDays as points
         tags: t.tags
       };
-    })
-  );
+    });
+  });
 
-  // Stats calculations
-  const totalTasks     = boardTasks.length;
+  const totalTasks = boardTasks.length;
   const completedTasks = boardTasks.filter(t => t.status === 'done').length;
-  const onTimeTasks    = boardTasks.filter(t => getStatusColor(t.dueDate) === 'green').length;
-  const nearDueTasks   = boardTasks.filter(t => getStatusColor(t.dueDate) === 'yellow').length;
-  const overdueTasks   = boardTasks.filter(t => getStatusColor(t.dueDate) === 'red').length;
-  const totalPoints    = boardTasks.reduce((sum, t) => sum + t.points, 0);
+  const onTimeTasks = boardTasks.filter(t => getStatusColor(t.dueDate) === 'green').length;
+  const nearDueTasks = boardTasks.filter(t => getStatusColor(t.dueDate) === 'yellow').length;
+  const overdueTasks = boardTasks.filter(t => getStatusColor(t.dueDate) === 'red').length;
+  const totalPoints = boardTasks.reduce((sum, t) => sum + t.points, 0);
 
-  // Team performance
   const memberPoints: Record<string, number> = {};
-  memberPoints['You'] = boardTasks
-    .filter(t => t.assignedTo === userRole)
-    .reduce((sum, t) => sum + t.points, 0);
+  // Include "You" in the list of possible assignees for stats calculation
+  const allPossibleAssignees = ['You', ...projectData.members.map(parseEmailName)];
+  allPossibleAssignees.forEach(assignee => {
+    memberPoints[assignee] = 0;
+  });
 
-  projectData.members.forEach((email, idx) => {
-    const displayName = parseEmailName(email);
-    const role = projectData.roles[idx + 1];
-    if (!role) return;
-    memberPoints[displayName] = boardTasks
-      .filter(t => t.assignedTo === role)
-      .reduce((sum, t) => sum + t.points, 0);
+  boardTasks.forEach(task => {
+    if (memberPoints.hasOwnProperty(task.assignedTo)) {
+      memberPoints[task.assignedTo] += task.points;
+    }
   });
 
   const stats = {
@@ -119,7 +137,6 @@ export default function Dashboard({
     memberPoints
   };
 
-  // Search & filter
   const filtered = boardTasks.filter(t => {
     const matchSearch =
       t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,9 +145,11 @@ export default function Dashboard({
       filterStatus === 'all' || t.status === filterStatus;
     return matchSearch && matchStatus;
   });
-  const roleFiltered = filtered.filter(t => t.assignedTo === userRole);
 
-  // Handlers
+  // Filter tasks to show only those assigned to "You" in the Dashboard
+  const myTasks = filtered.filter(t => t.assignedTo === myDisplayName);
+
+
   const handleAddTask = () => {
     setEditingTask(null);
     setIsTaskModalOpen(true);
@@ -139,22 +158,25 @@ export default function Dashboard({
     setEditingTask(task);
     setIsTaskModalOpen(true);
   };
-  const handleSaveTask = (data: Omit<Task, 'id' | 'statusColor'>) => {
+  const handleSaveTask = (data: Omit<Task, 'id' | 'statusColor' | 'status'>) => {
     if (editingTask) {
-      // Update existing
       setBoardTasks(prev =>
         prev.map(t =>
           t.id === editingTask.id
-            ? { ...t, ...data, statusColor: getStatusColor(data.dueDate) }
+            ? {
+                ...t,
+                ...data,
+                status: t.status, // Preserve the existing status for edited tasks
+                statusColor: getStatusColor(data.dueDate)
+              }
             : t
         )
       );
     } else {
-      // Create new, default status=todo
       const newTask: Task = {
         ...data,
         id: Date.now().toString(),
-        status: 'todo',
+        status: 'todo', // Always 'todo' for newly created tasks
         statusColor: getStatusColor(data.dueDate)
       };
       setBoardTasks(prev => [...prev, newTask]);
@@ -170,6 +192,18 @@ export default function Dashboard({
       )
     );
   };
+
+  // Generate the list of assignable users for the TaskModal
+  const assignableUsers = useMemo(() => {
+    const membersAsDisplayNames = projectData.members.map(memberEmail => {
+      // Use myDisplayName (which is 'You') for the current user's email, otherwise parse the name
+      return parseEmailName(memberEmail) === parseEmailName(userEmail) ? myDisplayName : parseEmailName(memberEmail);
+    });
+    // Add "Unassigned" as an option and remove any duplicate display names
+    const uniqueAssignableUsers = Array.from(new Set(['Unassigned', ...membersAsDisplayNames]));
+    return uniqueAssignableUsers;
+  }, [projectData.members, userEmail, myDisplayName]);
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -226,14 +260,12 @@ export default function Dashboard({
 
       {/* Optional Advanced Filters */}
       {showFilters && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          {/* add advanced filter UI here */}
-        </div>
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">{/* advanced filters */}</div>
       )}
 
-      {/* Kanban */}
+      {/* Kanban Board - Now displays only "My Tasks" (tasks assigned to 'You') */}
       <div className="overflow-x-auto">
-        <KanbanBoard tasks={roleFiltered} onTaskUpdate={handleTaskUpdate} />
+        <KanbanBoard tasks={myTasks} onTaskUpdate={handleTaskUpdate} />
       </div>
 
       {/* Task Modal */}
@@ -242,6 +274,7 @@ export default function Dashboard({
         onClose={() => setIsTaskModalOpen(false)}
         onSave={handleSaveTask}
         task={editingTask}
+        assignableUsers={assignableUsers}
       />
     </div>
   );
