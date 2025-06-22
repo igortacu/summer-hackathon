@@ -19,8 +19,7 @@ app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", True)
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
     """
-    This route now handles chatbot requests, gets a real response from OpenAI
-    via the bublikchat module, and returns it.
+a
     """
     data = request.get_json()
     # Check that the request has a valid JSON body with a 'message' key
