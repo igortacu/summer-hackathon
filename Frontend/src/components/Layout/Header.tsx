@@ -1,6 +1,5 @@
-// src/components/Layout/Header.tsx
 import React from 'react'
-import logo from '../../assets/logo.png'
+import logo from '../../assets/logo.png' // Assuming this path is correct in your project
 import { Menu, Bell, User, LogOut, Settings } from 'lucide-react';
 
 interface HeaderProps {
@@ -11,14 +10,14 @@ interface HeaderProps {
   };
   notifications: number;
   onLogout: () => void;
-  onMenuClick: () => void;       // ← new prop
+  onMenuClick: () => void;
 }
 
 export default function Header({
   user,
   notifications,
   onLogout,
-  onMenuClick,                 // ← destructure it
+  onMenuClick,
 }: HeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -73,7 +72,7 @@ export default function Header({
                   )}
                   <div className="text-left">
                     <p className="text-sm font-medium text-gray-900">
-                      {user.name}
+                      {user.name} {/* This line displays the user's name */}
                     </p>
                     <p className="text-xs text-gray-500 capitalize">
                       {user.role}

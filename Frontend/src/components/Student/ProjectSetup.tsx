@@ -7,9 +7,9 @@ interface ProjectSetupProps {
     pblGroupNumber: string;
     projectName: string;
     description: string;
-    members: string[];
-    roles: string[]; // This will now contain the unique roles assigned to members
-    memberAssignments: { memberEmail: string; role: string; }[]; // New: Explicit member-role assignments
+    members: string[]; // This will contain the 4 invited members
+    roles: string[]; // Unique roles assigned across all 5 (You + 4 invited)
+    memberAssignments: { memberEmail: string; role: string; }[]; // Explicit member-role assignments for all 5
   }) => void;
 }
 
@@ -33,31 +33,35 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
     pblGroupNumber: '',
     projectName: '',
     description: '',
-    members: [] as string[],
-    roles: [] as string[], // This will store unique project roles derived from memberAssignments
-    memberAssignments: [] as { memberEmail: string; role: string; }[], // Stores direct member-role pairings
+    members: [] as string[], // This array will store the 4 invited members
+    roles: [] as string[],
+    memberAssignments: [] as { memberEmail: string; role: string; }[],
   });
   const [newEmail, setNewEmail] = useState('');
 
-  // Effect to initialize memberAssignments when moving to step 3 and members are ready
+  // Effect to initialize memberAssignments when moving to step 3
   useEffect(() => {
+    // Only initialize if we're on step 3, have exactly 4 invited members,
+    // and memberAssignments hasn't been initialized yet.
     if (step === 3 && projectData.members.length === 4 && projectData.memberAssignments.length === 0) {
       setProjectData(prev => ({
         ...prev,
-        // Initialize an assignment object for each member
-        memberAssignments: prev.members.map(email => ({ memberEmail: email, role: '' })),
+        // Prepend 'You' to the list of members for assignment, then add the 4 invited members
+        memberAssignments: [
+          { memberEmail: 'You', role: '' }, // Represents the current user
+          ...prev.members.map(email => ({ memberEmail: email, role: '' }))
+        ],
       }));
     }
-  }, [step, projectData.members, projectData.memberAssignments.length]);
+  }, [step, projectData.members, projectData.memberAssignments.length]); // Dependencies for useEffect
 
   const handleAddMember = () => {
-    // Check for valid email format (simple check)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (
       newEmail.trim() &&
-      emailRegex.test(newEmail.trim()) && // Validate email format
+      emailRegex.test(newEmail.trim()) &&
       !projectData.members.includes(newEmail.trim()) &&
-      projectData.members.length < 4
+      projectData.members.length < 4 // Allow up to 4 additional members to be invited
     ) {
       setProjectData(prev => ({
         ...prev,
@@ -65,17 +69,14 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
       }));
       setNewEmail('');
     } else if (projectData.members.includes(newEmail.trim())) {
-      console.log("Member already added or invalid email.");
+      console.log("Teammate email already added.");
       // In a real app, you might show a user-friendly message
     } else if (!emailRegex.test(newEmail.trim())) {
       console.log("Invalid email format.");
     } else if (projectData.members.length >= 4) {
-      console.log("Maximum 4 members allowed.");
+      console.log("Maximum 4 additional teammates allowed.");
     }
   };
-
-  // This function is no longer needed in the new Step 3 logic
-  // const addRole = () => { /* ... */ };
 
   const handleMemberRoleChange = (memberEmail: string, newRole: string) => {
     setProjectData(prev => ({
@@ -95,11 +96,11 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
           projectData.projectName.trim() !== ''
         );
       case 2:
-        return projectData.members.length === 4;
+        return projectData.members.length === 4; // Require exactly 4 invited members
       case 3:
-        // All 4 members must have a role assigned
+        // All 5 (You + 4 invited) members must have a role assigned
         return (
-          projectData.memberAssignments.length === 4 &&
+          projectData.memberAssignments.length === 5 && // Check for 5 assignments now
           projectData.memberAssignments.every(assignment => assignment.role.trim() !== '')
         );
       default:
@@ -113,9 +114,12 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
     } else {
       // Before completing, derive the 'roles' array from the unique assigned member roles
       const finalRoles = Array.from(new Set(projectData.memberAssignments.map(a => a.role).filter(Boolean)));
-
+      
+      // The 'members' array passed to onComplete should now contain the 4 invited emails.
+      // The 'memberAssignments' will include 'You' + the 4 invited.
       onComplete({
         ...projectData,
+        // projectData.members already contains the 4 invited members based on current logic
         roles: finalRoles, // Pass the derived unique roles
       });
     }
@@ -155,13 +159,13 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">
               {step === 1 && 'Project & Academic Details'}
-              {step === 2 && 'Invite Teammates (4 required)'}
-              {step === 3 && 'Assign Roles to Teammates'} {/* Updated title */}
+              {step === 2 && 'Invite Teammates (4 required)'} {/* Updated title for step 2 */}
+              {step === 3 && 'Assign Roles to Teammates'}
             </h2>
             <p className="text-gray-600 mt-1">
               {step === 1 && 'Fill in your academic info and project name'}
-              {step === 2 && 'Invite exactly 4 teammates to collaborate'}
-              {step === 3 && 'Assign specific roles to each of your 4 teammates'} {/* Updated description */}
+              {step === 2 && 'Invite 4 teammates to collaborate'} {/* Updated description for step 2 */}
+              {step === 3 && 'Assign specific roles to each of your 5 team members (including yourself)'} {/* Updated description for step 3 */}
             </p>
           </div>
         </div>
@@ -277,7 +281,7 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
                 </div>
                 <button
                   onClick={handleAddMember}
-                  disabled={projectData.members.length >= 4}
+                  disabled={projectData.members.length >= 4} // Max 4 invited members
                   className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center disabled:opacity-50"
                 >
                   Invite
@@ -290,9 +294,8 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
                 </h4>
                 <div className="space-y-2">
                   {projectData.members.map((email, idx) => (
-                    <div key={idx} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
-                      <span>{email}</span>
-                      {idx === 0 && <span className="text-xs text-gray-500 ml-2">(You)</span>} {/* Indicate the first member as "You" */}
+                    <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                      {email}
                     </div>
                   ))}
                 </div>
@@ -303,14 +306,14 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
           {/* Step 3: Assign Roles to Members */}
           {step === 3 && (
             <div className="space-y-6">
-              <p className="text-gray-700 mb-4">Assign a primary role to each of your team members:</p>
+              <p className="text-gray-700 mb-4">Assign a primary role to each of your 5 team members:</p>
               
               {projectData.memberAssignments.map((assignment, idx) => (
                 <div key={assignment.memberEmail} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 p-3 bg-gray-50 rounded-lg">
                   <label htmlFor={`role-${idx}`} className="text-sm font-medium text-gray-800 w-full sm:w-1/3">
-                    {/* Display member's email, indicating "You" for the first member */}
+                    {/* Display member's email, or "You" for the current user */}
                     <span className="font-semibold">{assignment.memberEmail}</span>
-                    {idx === 0 && <span className="text-xs text-gray-500 ml-1">(You)</span>}
+                    {assignment.memberEmail === 'You' && <span className="text-xs text-gray-500 ml-1">(Current User)</span>}
                   </label>
                   <select
                     id={`role-${idx}`}
@@ -324,7 +327,7 @@ export default function ProjectSetup({ onComplete }: ProjectSetupProps) {
                       <option
                         key={roleOption}
                         value={roleOption}
-                        // Disable already assigned roles (unless it's the current assignment)
+                        // Disable roles already assigned to other distinct members
                         disabled={
                           projectData.memberAssignments.some(
                             (a) => a.role === roleOption && a.memberEmail !== assignment.memberEmail
