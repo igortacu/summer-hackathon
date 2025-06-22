@@ -1,17 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-// --- ICONS ---
-const ChatIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-    </svg>
-);
+// --- ICONS (unchanged) ---
+const ChatIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}> <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /> </svg> );
+const CloseIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}> <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /> </svg> );
+const SendIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"> <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /> </svg> );
 
-const CloseIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-);
+interface Message { id: number; text: string; sender: 'user' | 'ai'; }
+
 
 const SendIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
@@ -29,22 +24,24 @@ interface Message {
 /**
  * AI Assistant chat component fetching responses from backend
  */
+
 const AIAssistant = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [messages, setMessages] = useState<Message[]>([
-        { id: 1, text: "Bună! Cum te pot ajuta astăzi?", sender: 'ai' }
+        { id: 1, text: "Hello! How can I help you today?", sender: 'ai' }
     ]);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Scroll to latest message
+
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
+
         const text = inputValue.trim();
         if (!text) return;
 
@@ -80,10 +77,12 @@ const AIAssistant = () => {
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
+
         }
     };
 
     if (!isOpen) {
+
         return (
             <button
                 onClick={() => setIsOpen(true)}
@@ -93,12 +92,13 @@ const AIAssistant = () => {
                 <ChatIcon />
             </button>
         );
+
     }
 
     return (
         <div className="fixed bottom-5 right-5 w-full max-w-sm h-[60vh] bg-white rounded-xl shadow-2xl z-50 flex flex-col animate-fade-in-up">
-            {/* Header */}
             <header className="flex items-center justify-between p-3 border-b bg-gray-50 rounded-t-xl">
+
                 <h3 className="text-lg font-semibold text-gray-800">AI Assistant</h3>
                 <button
                     onClick={() => setIsOpen(false)}
@@ -119,6 +119,7 @@ const AIAssistant = () => {
                                 : 'bg-gray-500 rounded-bl-lg'
                         }`}>
                             {msg.text}
+
                         </div>
                     </div>
                 ))}
@@ -131,6 +132,7 @@ const AIAssistant = () => {
                 )}
                 <div ref={chatEndRef} />
             </div>
+
 
             {/* Input */}
             <footer className="p-3 border-t bg-gray-50 rounded-b-xl">
@@ -150,6 +152,7 @@ const AIAssistant = () => {
                     >
                         <SendIcon />
                     </button>
+
                 </form>
             </footer>
         </div>
